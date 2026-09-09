@@ -33,8 +33,23 @@ fi
 mkdir -p "$EXT_DIR"
 ln -sfn "$ROOT" "$DEST"
 
-# VS Code caches scanned manifests; a stale cache makes a changed "main" fail.
-rm -f "$EXT_DIR/extensions.json"
+# Drop only THIS extension's entry from the profile's installed-extensions list, so
+# VS Code re-reads our manifest on next start. Never delete the whole file: it is the
+# installed-extensions list for the profile, not a throwaway cache, and wiping it
+# makes every other extension look uninstalled.
+MANIFEST="$EXT_DIR/extensions.json"
+if [ -f "$MANIFEST" ] && command -v node >/dev/null 2>&1; then
+	node -e '
+		const fs = require("fs");
+		const file = process.argv[1], id = process.argv[2];
+		try {
+			const list = JSON.parse(fs.readFileSync(file, "utf8"));
+			if (!Array.isArray(list)) { process.exit(0); }
+			const kept = list.filter(e => !(e.identifier && e.identifier.id === id));
+			if (kept.length !== list.length) { fs.writeFileSync(file, JSON.stringify(kept)); }
+		} catch { /* malformed: leave it for VS Code to rebuild */ }
+	' "$MANIFEST" "$(field publisher).$(field name)"
+fi
 
 echo "linked $DEST"
 echo "    -> $ROOT"
