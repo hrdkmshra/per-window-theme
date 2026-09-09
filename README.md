@@ -74,11 +74,12 @@ No build step, no dependencies, no packaging.
 git clone https://github.com/hrdkmshra/per-window-theme.git
 cd per-window-theme
 npm test              # optional, ~1s, no VS Code involved
-./scripts/install.sh  # symlink into ~/.vscode/extensions
+./scripts/install.sh  # installs the packaged .vsix via the VS Code CLI
 ```
 
-Then fully quit VS Code and reopen. That last step matters: VS Code caches scanned extension
-manifests, so a reload alone will not pick up a newly linked extension.
+Then reload VS Code (`Developer: Reload Window`). A prebuilt `.vsix` is committed, so this needs no
+`npm install`, no build, and no network. If you have run `npm install`, the script repackages from
+source first so you get exactly what is in your working tree.
 
 Verify it worked: open two windows with no folder. They should show different themes, and each status
 bar should show a theme name. If not, run `Per-Window Theme: Show Status` from the command palette.
@@ -163,8 +164,8 @@ Every command, every setting, the module layout, and the test suite:
 ## Uninstall
 
 ```bash
-rm ~/.vscode/extensions/local.per-window-theme-0.0.1   # the symlink only
-rm -rf ~/.per-window-theme                             # clone + built-in farm, if used
+code --uninstall-extension local.per-window-theme
+rm -rf ~/.per-window-theme    # clone + built-in farm, if used
 ```
 
 Then quit and reopen VS Code. Your `workbench.colorTheme` was never modified, so every window goes

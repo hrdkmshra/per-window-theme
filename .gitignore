@@ -1,3 +1,6 @@
 node_modules/
 *.tmp
 .DS_Store
+# The built .vsix is committed so a plain clone can install with no npm install.
+dist/*
+!dist/*.vsix

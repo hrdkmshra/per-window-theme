@@ -1,0 +1,13 @@
+# Everything the running extension does not need.
+.git/**
+.github/**
+.spec/**
+docs/**
+test/**
+scripts/**
+node_modules/**
+dist/**
+jsconfig.json
+.gitignore
+.vscodeignore
+**/*.map

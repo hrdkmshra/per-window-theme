@@ -13,7 +13,6 @@
 #   PWT_REPO    git URL to clone       (default: this repo on GitHub)
 #   PWT_REF     branch/tag to check out (default: main)
 #   PWT_DIR     where to keep the clone (default: ~/.per-window-theme/app)
-#   PWT_EXT_DIR extension dir to link into (default: ~/.vscode/extensions)
 #   PWT_FARM    space-separated theme extension dirs to register as built-in
 set -euo pipefail
 
@@ -59,4 +58,5 @@ if ! command -v code >/dev/null 2>&1; then
 fi
 
 echo
-echo "installed. clone lives at $DIR — pull there to update, or re-run this script."
+echo "installed via code --install-extension. Clone lives at $DIR — pull there to"
+echo "update, or just re-run this script."
