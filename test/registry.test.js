@@ -102,8 +102,10 @@ async function claims() {
 		await claimAs('w1');
 		await claimAs('w2');
 		assert.strictEqual(await claimAs('w3'), 2);
-		assert.strictEqual(R.themeForSlot(2), 'A', 'slot 2 should wrap to themes[0]');
-		assert.strictEqual(R.themeForSlot(3), 'B');
+		const list = ['A', 'B'];
+		const at = n => R.decide({ pin: null, memory: {}, key: null, list, slotNumber: n, strategy: 'slot' }).theme;
+		assert.strictEqual(at(2), 'A', 'slot 2 should wrap to themes[0]');
+		assert.strictEqual(at(3), 'B');
 	});
 
 	await test('closing a window frees its slot for reuse (T7)', async () => {
@@ -179,8 +181,65 @@ async function claims() {
 	});
 
 	await test('empty theme list yields no theme rather than crashing (T11)', () => {
-		stubConfig.themes = [];
-		assert.strictEqual(R.themeForSlot(0), null);
+		const d = R.decide({ pin: null, memory: {}, key: null, list: [], slotNumber: 0, strategy: 'slot' });
+		assert.strictEqual(d.theme, null);
+	});
+
+	// --- theme decision (window pin > folder memory > slot/hash) ------------------
+
+	const LIST = ['Dracula Pro', 'Light Modern'];
+	const base = { pin: null, memory: {}, key: null, list: LIST, slotNumber: 0, strategy: 'slot' };
+
+	await test('slot rotation assigns per window order', () => {
+		assert.strictEqual(R.decide({ ...base, slotNumber: 0 }).theme, 'Dracula Pro');
+		assert.strictEqual(R.decide({ ...base, slotNumber: 1 }).theme, 'Light Modern');
+		assert.strictEqual(R.decide({ ...base, slotNumber: 2 }).theme, 'Dracula Pro', 'should wrap');
+	});
+
+	await test('folder memory beats slot rotation', () => {
+		const memory = { 'file:///repo/a': { theme: 'Monokai' } };
+		const d = R.decide({ ...base, memory, key: 'file:///repo/a', slotNumber: 1 });
+		assert.strictEqual(d.theme, 'Monokai');
+		assert.match(d.source, /remembered/);
+	});
+
+	await test('an explicit window pick beats folder memory', () => {
+		const memory = { 'file:///repo/a': { theme: 'Monokai' } };
+		const d = R.decide({ ...base, pin: 'Abyss', memory, key: 'file:///repo/a' });
+		assert.strictEqual(d.theme, 'Abyss');
+		assert.match(d.source, /this window/);
+	});
+
+	await test('unremembered folder falls back to slot rotation', () => {
+		const memory = { 'file:///repo/other': { theme: 'Monokai' } };
+		assert.strictEqual(R.decide({ ...base, memory, key: 'file:///repo/a', slotNumber: 1 }).theme, 'Light Modern');
+	});
+
+	await test('hash strategy is stable per folder and ignores window order', () => {
+		const a1 = R.decide({ ...base, key: 'file:///repo/a', strategy: 'hash', slotNumber: 0 }).theme;
+		const a2 = R.decide({ ...base, key: 'file:///repo/a', strategy: 'hash', slotNumber: 7 }).theme;
+		assert.strictEqual(a1, a2, 'same folder must always map to the same theme');
+		assert.ok(LIST.includes(a1));
+	});
+
+	await test('hash strategy spreads different folders across the list', () => {
+		const seen = new Set();
+		for (let i = 0; i < 40; i++) {
+			seen.add(R.hashPick(`file:///repo/p${i}`, LIST));
+		}
+		assert.strictEqual(seen.size, LIST.length, `expected both themes to be used, saw ${[...seen]}`);
+	});
+
+	await test('empty window with no themes configured decides nothing', () => {
+		const d = R.decide({ ...base, list: [] });
+		assert.strictEqual(d.theme, null);
+		assert.match(d.source, /no themes configured/);
+	});
+
+	await test('hash strategy does not apply to an empty window', () => {
+		const d = R.decide({ ...base, key: null, strategy: 'hash', slotNumber: 1 });
+		assert.strictEqual(d.theme, 'Light Modern');
+		assert.match(d.source, /slot 1/);
 	});
 
 	console.log(failures ? `\n${failures} test(s) failed` : '\nall tests passed');

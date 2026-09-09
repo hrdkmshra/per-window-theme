@@ -52,17 +52,41 @@ code --builtin-extensions-dir "$HOME/.per-window-theme/builtins"
 Re-run it after a VS Code update. The Dock icon can't pass the flag; launch from the terminal, or
 wrap it.
 
+## How a window picks its theme
+
+Three rules, first match wins:
+
+| Priority | Rule | Set by |
+| --- | --- | --- |
+| 1 | **This window, explicitly** | `Pick Theme (This Window)` or `Cycle Theme`. Lasts until the window is closed |
+| 2 | **Remembered for this folder** | `Remember Theme For This Folder` — that directory then opens with that theme every time, in any window |
+| 3 | **Window slot** | Automatic. First window gets `themes[0]`, second `themes[1]`, wrapping |
+
+Folder memory is stored in the extension's own state, **never** in `.vscode/settings.json`, so
+nothing lands in your repos and nothing gets committed by accident.
+
+Set `perWindowTheme.unmappedStrategy` to `hash` and even unremembered folders get a stable theme
+derived from their path — the same repo always looks the same, with zero configuration.
+
 ## Commands
 
 | Command | Does |
 | --- | --- |
-| `Per-Window Theme: Cycle Theme (This Window)` | Next theme in the list, this window only |
-| `Per-Window Theme: Pick Theme (This Window)` | Quick pick, applies to this window only |
-| `Per-Window Theme: Re-apply Theme` | Force re-apply |
-| `Per-Window Theme: Show Status` | Slot, theme, and the live window registry |
-| `Per-Window Theme: Diagnose Theme Resolution` | Probe every installed theme, report what resolves |
+| `Pick Theme (This Window)` | Quick pick — configured themes first, then everything installed. Offers to remember it for the folder |
+| `Cycle Theme (This Window)` | Next theme in the list, this window only |
+| `Remember Theme For This Folder` | Pin a theme to the open directory, for all future windows |
+| `Forget Theme For This Folder` | Drop that folder's mapping |
+| `Show Remembered Folders` | List every folder → theme mapping |
+| `Clear All Remembered Folders` | Wipe the memory (asks first) |
+| `Re-apply Theme` | Force re-apply |
+| `Show Status` | Theme, why it was chosen, slot, folder, and the live window registry |
+| `Diagnose Theme Resolution` | Probe every installed theme, report what resolves |
 
-The status bar shows `slot N · <theme>`, with a warning icon if the theme could not be applied.
+All are prefixed `Per-Window Theme:` in the command palette.
+
+The status bar shows the current theme; click it to pick another. Its tooltip explains *why* this
+window has this theme (explicit pick / remembered folder / slot), and shows a warning icon if the
+theme could not be applied.
 
 ## Settings
 
@@ -70,8 +94,20 @@ The status bar shows `slot N · <theme>`, with a warning icon if the theme could
 | --- | --- | --- |
 | `perWindowTheme.enabled` | `true` | Kill switch |
 | `perWindowTheme.themes` | `["Dark Modern", "Light Modern"]` | Ordered theme ids, one per window slot, wrapping |
+| `perWindowTheme.rememberFolders` | `true` | Remember a theme per directory |
+| `perWindowTheme.unmappedStrategy` | `"slot"` | `slot` = by window order; `hash` = stable per folder path |
+| `perWindowTheme.showStatusBar` | `true` | Show the theme in the status bar |
+| `perWindowTheme.notifyOnFailure` | `true` | Warn instead of failing silently |
 | `perWindowTheme.heartbeatMs` | `5000` | How often a window refreshes its slot claim |
 | `perWindowTheme.staleMs` | `20000` | When an unrefreshed claim is treated as dead |
+
+## Quality-of-life behaviour
+
+- Re-applies your theme within ~1s when a normal `Cmd+K Cmd+T` overwrites it in every window.
+- Also re-checks when a window regains focus, catching a stomp that happened in the background.
+- Warns at startup if `themes` names something not installed, and can dump the valid ids.
+- Recomputes when you add or remove a folder in an empty window.
+- Failure surfaces as a warning with `Diagnose` / `Pick another`, never a silent no-op.
 
 ## Tests
 

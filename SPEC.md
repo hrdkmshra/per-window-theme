@@ -204,6 +204,20 @@ activate()
   100–400 ms, re-read, and if another live claim holds the same slot, the one with the later `ts`
   (tie-break: lexicographically greater `sid`) re-picks. Deterministic, no lock file.
 
+**Theme decision.** One pure function, `decide()`, so the rule is testable and the reason is
+reportable in the UI. First match wins:
+
+1. **Window pin** — an explicit pick or cycle in this window. Session-scoped; dies with the window.
+2. **Folder memory** — `folderKey()` → theme, held in `globalState` under `folderThemes.v1`.
+   Deliberately not workspace settings: no `.vscode/settings.json` is created, so nothing can be
+   committed into a repo by accident. Key is the `.code-workspace` URI when there is one, else the
+   first workspace folder URI, else `null` for an empty window.
+3. **Unmapped** — `slot` strategy walks the theme list by window order; `hash` strategy takes
+   `sha1(folderKey) % list.length`, so a folder is stable across windows and machines with no setup.
+
+Clearing is a first-class operation: per folder (`forgetFolder`) or all of it (`clearMemory`, behind a
+modal confirm).
+
 **Config**
 
 | Setting | Default | Meaning |

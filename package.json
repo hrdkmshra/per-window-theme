@@ -44,6 +44,34 @@
           ],
           "markdownDescription": "Ordered list of theme ids (the `settingsId`, i.e. the theme's `id` or its `label`). Window slot N gets entry N, wrapping around. Defaults are built-in themes so they resolve offline."
         },
+        "perWindowTheme.rememberFolders": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Remember a theme per folder, so the same directory always opens with the same theme. Stored in the extension's own state — never written to `.vscode/settings.json`."
+        },
+        "perWindowTheme.unmappedStrategy": {
+          "type": "string",
+          "enum": [
+            "slot",
+            "hash"
+          ],
+          "enumDescriptions": [
+            "Rotate through the theme list by window order: first window gets the first theme, and so on.",
+            "Derive the theme from the folder path, so an unremembered folder still gets a stable theme every time."
+          ],
+          "default": "slot",
+          "description": "How to choose a theme for a folder that has nothing remembered."
+        },
+        "perWindowTheme.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the current window's theme in the status bar. Click it to pick a different one."
+        },
+        "perWindowTheme.notifyOnFailure": {
+          "type": "boolean",
+          "default": true,
+          "description": "Warn when a theme cannot be applied, instead of failing silently."
+        },
         "perWindowTheme.heartbeatMs": {
           "type": "number",
           "default": 5000,
@@ -60,12 +88,28 @@
     },
     "commands": [
       {
+        "command": "perWindowTheme.pick",
+        "title": "Per-Window Theme: Pick Theme (This Window)"
+      },
+      {
         "command": "perWindowTheme.cycle",
         "title": "Per-Window Theme: Cycle Theme (This Window)"
       },
       {
-        "command": "perWindowTheme.pick",
-        "title": "Per-Window Theme: Pick Theme (This Window)"
+        "command": "perWindowTheme.rememberForFolder",
+        "title": "Per-Window Theme: Remember Theme For This Folder"
+      },
+      {
+        "command": "perWindowTheme.forgetFolder",
+        "title": "Per-Window Theme: Forget Theme For This Folder"
+      },
+      {
+        "command": "perWindowTheme.showMemory",
+        "title": "Per-Window Theme: Show Remembered Folders"
+      },
+      {
+        "command": "perWindowTheme.clearMemory",
+        "title": "Per-Window Theme: Clear All Remembered Folders"
       },
       {
         "command": "perWindowTheme.reapply",
