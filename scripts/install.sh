@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# Package this extension and install it through VS Code's own CLI.
+# Build the extension into a .vsix and install it through VS Code's own CLI.
 #
-# This replaces an earlier approach that symlinked the repo into
-# ~/.vscode/extensions and edited extensions.json by hand. That file is the profile's
-# installed-extensions list, not a cache, and editing it made every other extension
-# look uninstalled. `code --install-extension` is the supported path: it writes that
-# list correctly and copies the files, so editing this repo no longer mutates the
-# running editor.
+# `code --install-extension` is the supported path: VS Code writes its own
+# installed-extensions list and copies the files in. An earlier version of this script
+# symlinked the repo into ~/.vscode/extensions and edited extensions.json by hand;
+# that file is the profile's installed-extensions list, not a cache, and editing it
+# made every other extension look uninstalled.
 #
-# Uses a prebuilt .vsix from dist/ when vsce is unavailable, so a plain clone can
-# still install with no npm install and no network.
+# The .vsix is built here and never committed, so what you install is always your
+# current working tree.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,7 +17,6 @@ cd "$ROOT"
 field() { sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" package.json | head -1; }
 NAME="$(field name)"
 VERSION="$(field version)"
-VSIX="dist/$NAME-$VERSION.vsix"
 
 command -v code >/dev/null 2>&1 || {
 	echo "the 'code' CLI is not on PATH." >&2
@@ -26,21 +24,18 @@ command -v code >/dev/null 2>&1 || {
 	exit 1
 }
 
-if [ -x node_modules/.bin/vsce ]; then
-	echo "packaging $NAME $VERSION"
-	mkdir -p dist
-	npm run --silent package >/dev/null
-elif [ -f "$VSIX" ]; then
-	echo "vsce not installed; using the prebuilt $VSIX"
-else
-	echo "no $VSIX and no vsce to build one." >&2
-	echo "run: npm install   (then re-run this script)" >&2
+if [ ! -x node_modules/.bin/vsce ]; then
+	echo "vsce is missing — the packaging tool is a dev dependency." >&2
+	echo "run:  npm install" >&2
 	exit 1
 fi
 
-# Newest matching vsix, in case the version in package.json moved on.
-VSIX="$(ls -t dist/"$NAME"-*.vsix 2>/dev/null | head -1)"
-[ -n "$VSIX" ] || { echo "no vsix found in dist/" >&2; exit 1; }
+echo "packaging $NAME $VERSION"
+mkdir -p dist
+npm run --silent package >/dev/null
+
+VSIX="dist/$NAME-$VERSION.vsix"
+[ -f "$VSIX" ] || { echo "expected $VSIX after packaging, but it is missing" >&2; exit 1; }
 
 echo "installing $VSIX"
 code --install-extension "$VSIX" --force

@@ -35,10 +35,17 @@ else
 	git clone --quiet --branch "$REF" --depth 1 "$REPO" "$DIR"
 fi
 
-# Optional sanity check; skipped when node is absent since the extension needs none.
+# The extension itself has no dependencies, but packaging it needs the dev tools.
 if command -v node >/dev/null 2>&1; then
 	echo "running tests"
-	( cd "$DIR" && node test/run.js >/dev/null ) && echo "tests passed" || echo "tests FAILED — installing anyway, but expect trouble" >&2
+	( cd "$DIR" && node test/run.js >/dev/null ) && echo "tests passed" || echo "tests FAILED — continuing, but expect trouble" >&2
+fi
+
+if command -v npm >/dev/null 2>&1; then
+	echo "installing dev tools (packager)"
+	( cd "$DIR" && npm install --silent --no-audit --no-fund >/dev/null )
+else
+	echo "npm not found; scripts/install.sh needs it to build the .vsix" >&2
 fi
 
 bash "$DIR/scripts/install.sh"

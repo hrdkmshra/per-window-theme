@@ -73,13 +73,13 @@ No build step, no dependencies, no packaging.
 ```bash
 git clone https://github.com/hrdkmshra/per-window-theme.git
 cd per-window-theme
+npm install           # dev tools only: the packager and the type checker
 npm test              # optional, ~1s, no VS Code involved
-./scripts/install.sh  # installs the packaged .vsix via the VS Code CLI
+./scripts/install.sh  # builds a .vsix and installs it via the VS Code CLI
 ```
 
-Then reload VS Code (`Developer: Reload Window`). A prebuilt `.vsix` is committed, so this needs no
-`npm install`, no build, and no network. If you have run `npm install`, the script repackages from
-source first so you get exactly what is in your working tree.
+Then reload VS Code (`Developer: Reload Window`). The `.vsix` is built from your working tree and is
+never committed, so what you install is always the code you have.
 
 Verify it worked: open two windows with no folder. They should show different themes, and each status
 bar should show a theme name. If not, run `Per-Window Theme: Show Status` from the command palette.
