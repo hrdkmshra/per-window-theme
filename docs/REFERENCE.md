@@ -5,7 +5,7 @@ folder-scoped settings, no fork of VS Code.
 
 Problem statement and install steps are in [../README.md](../README.md). This file is the full reference.
 
-Status: working PoC, verified on VS Code 1.108.0 / macOS. Design and evidence in [../.spec/SPEC.md](../.spec/SPEC.md).
+Status: working PoC. Behaviour verified on VS Code 1.136.2 / macOS; the mechanism was derived from the 1.108.0 source checkout. Design and evidence in [../.spec/SPEC.md](../.spec/SPEC.md).
 
 ## How it works, in one paragraph
 
@@ -91,7 +91,8 @@ theme could not be applied.
 ## Tests
 
 ```bash
-npm test                     # 32 headless tests: slots, decision tiers, folder memory
+npm test                     # 46 headless tests: slots, decision tiers, folder memory, global resolution
+./scripts/scenario.sh        # end-to-end in a real window: opt in, survive a global change, hand back
 ./scripts/selftest.sh        # throwaway VS Code, probes every theme, writes a JSON report
 BUILTIN_FARM=1 ./scripts/selftest.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
 ./scripts/demo.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0   # two live windows

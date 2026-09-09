@@ -9,7 +9,8 @@ const { summary } = require('./harness');
 const suites = [
 	['registry', require('./registry.test')],
 	['decide', require('./decide.test')],
-	['memory', require('./memory.test')]
+	['memory', require('./memory.test')],
+	['globalTheme', require('./globalTheme.test')]
 ];
 
 (async () => {

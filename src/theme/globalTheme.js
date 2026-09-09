@@ -1,7 +1,5 @@
 'use strict';
 
-const vscode = require('vscode');
-
 /**
  * Working out which theme the workbench would show on its own.
  *
@@ -10,6 +8,9 @@ const vscode = require('vscode');
  * the global one back. The API never exposes the current theme's id (only its kind),
  * so we resolve it from settings the same way the workbench does in
  * ThemeConfiguration.getColorThemeSettingId().
+ *
+ * The settings reader is injected so this is testable on plain node; `vscode` is
+ * required lazily, only when the default reader is actually used.
  */
 
 const Kind = {
@@ -19,27 +20,34 @@ const Kind = {
 	HighContrastLight: 4
 };
 
+function vscodeSettingsReader() {
+	// Lazy, so requiring this module outside the extension host is safe.
+	const vscode = require('vscode');
+	const wb = vscode.workspace.getConfiguration();
+	return key => wb.get(key);
+}
+
 /**
- * @param {number} kind the theme kind the workbench painted before we touched it,
- *   captured at activation. Used to pick the right `preferred*` setting when VS Code
- *   is following the OS color scheme.
+ * @param {number|undefined} kind the theme kind the workbench painted before we
+ *   touched it. Picks the right `preferred*` setting when VS Code follows the OS.
+ * @param {(key: string) => any} [get] settings reader, injected in tests
  * @returns {string|undefined} theme settingsId, or undefined if unset
  */
-function resolveGlobalThemeId(kind) {
-	const wb = vscode.workspace.getConfiguration();
+function resolveGlobalThemeId(kind, get) {
+	const read = get || vscodeSettingsReader();
 	const isHighContrast = kind === Kind.HighContrast || kind === Kind.HighContrastLight;
 
-	if (wb.get('window.autoDetectHighContrast') && isHighContrast) {
+	if (read('window.autoDetectHighContrast') && isHighContrast) {
 		return kind === Kind.HighContrastLight
-			? wb.get('workbench.preferredHighContrastLightColorTheme')
-			: wb.get('workbench.preferredHighContrastColorTheme');
+			? read('workbench.preferredHighContrastLightColorTheme')
+			: read('workbench.preferredHighContrastColorTheme');
 	}
-	if (wb.get('window.autoDetectColorScheme')) {
+	if (read('window.autoDetectColorScheme')) {
 		return kind === Kind.Light
-			? wb.get('workbench.preferredLightColorTheme')
-			: wb.get('workbench.preferredDarkColorTheme');
+			? read('workbench.preferredLightColorTheme')
+			: read('workbench.preferredDarkColorTheme');
 	}
-	return wb.get('workbench.colorTheme');
+	return read('workbench.colorTheme');
 }
 
 module.exports = { resolveGlobalThemeId, Kind };

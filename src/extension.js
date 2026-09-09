@@ -118,6 +118,11 @@ async function activate(context) {
 
 		...commands.registerAll(controller)
 	);
+
+	// Behaviour check against a fully wired extension; see debug/scenario.js.
+	if (process.env.PWT_SCENARIO_OUT) {
+		await require('./debug/scenario').run(process.env.PWT_SCENARIO_OUT, controller);
+	}
 }
 
 async function deactivate() {

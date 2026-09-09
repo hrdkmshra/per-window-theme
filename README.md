@@ -3,7 +3,7 @@
 Give every open VS Code window its own color theme, at the same time — without creating a workspace
 file, without folder-scoped settings, and without forking VS Code.
 
-![status](https://img.shields.io/badge/status-working%20PoC-brightgreen) ![tests](https://img.shields.io/badge/tests-32%20passing-brightgreen) ![vscode](https://img.shields.io/badge/verified-1.108.0%20%2F%20macOS-blue)
+![status](https://img.shields.io/badge/status-working%20PoC-brightgreen) ![tests](https://img.shields.io/badge/tests-46%20unit%20%2B%20e2e-brightgreen) ![vscode](https://img.shields.io/badge/verified-1.136.2%20%2F%20macOS-blue)
 
 ## The problem
 

@@ -4,6 +4,8 @@ Give each open VS Code window its own color theme, simultaneously, with **no wor
 folder-scoped settings, and no fork**. Personal-use extension, plug-and-play.
 
 Target: VS Code 1.108.x (source read from `../vscode-main`, `code-oss-dev@1.108.0`).
+Behaviour verified against the installed app, **1.136.2** — the mechanism survived 28 minor versions
+past the source it was derived from.
 
 **Status: mechanism verified on this machine.** See §8 for measured results. Headline: the approach
 works, and the one predicted blocker (private/`.vsix` themes such as Dracula Pro) is real and is
@@ -303,6 +305,18 @@ self-test run. Cause was Workspace Trust — a folder opened in a fresh `--user-
 and a restricted window does not activate extensions. Fixed by declaring
 `capabilities.untrustedWorkspaces.supported` (correct anyway: this extension never executes workspace
 content) and by having the self-test open an empty window with `--disable-workspace-trust`.
+
+**Runtime behaviour of the `global` fallback** — verified end-to-end by `scripts/scenario.sh`, which
+drives a fully activated extension inside a throwaway window and asserts on `activeColorTheme.kind`
+at each step. All five pass on 1.136.2:
+
+| Step | Expected | Result |
+| --- | --- | --- |
+| Baseline, nothing opted in | window keeps global (Dark Modern) | Dark, `overriding=false` |
+| Explicit pick of Light Modern | window repaints | Light, `overriding=true` |
+| Global changed to Abyss (Dark) | per-window theme survives | Light — the global change did not win |
+| Per-window setup dropped | handed back to global Abyss | Dark, `overriding=false` |
+| Global changed to Light Modern | unopted window follows | Light |
 
 **Still needs eyes** — these are two-window UI behaviours no headless harness can judge:
 T1 (two windows visibly differ), T5 (recovery after a normal `Ctrl+K Ctrl+T`), T6 (reload flash).
