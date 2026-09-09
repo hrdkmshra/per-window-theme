@@ -39,8 +39,8 @@
             "type": "string"
           },
           "default": [
-            "Default Dark Modern",
-            "Default Light Modern"
+            "Dark Modern",
+            "Light Modern"
           ],
           "markdownDescription": "Ordered list of theme ids (the `settingsId`, i.e. the theme's `id` or its `label`). Window slot N gets entry N, wrapping around. Defaults are built-in themes so they resolve offline."
         },

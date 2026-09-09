@@ -25,7 +25,7 @@ Pick your themes in settings:
 
 ```jsonc
 {
-  "perWindowTheme.themes": ["Dracula Pro", "Default Light Modern"]
+  "perWindowTheme.themes": ["Dracula Pro", "Light Modern"]
 }
 ```
 
@@ -69,7 +69,7 @@ The status bar shows `slot N · <theme>`, with a warning icon if the theme could
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `perWindowTheme.enabled` | `true` | Kill switch |
-| `perWindowTheme.themes` | `["Default Dark Modern", "Default Light Modern"]` | Ordered theme ids, one per window slot, wrapping |
+| `perWindowTheme.themes` | `["Dark Modern", "Light Modern"]` | Ordered theme ids, one per window slot, wrapping |
 | `perWindowTheme.heartbeatMs` | `5000` | How often a window refreshes its slot claim |
 | `perWindowTheme.staleMs` | `20000` | When an unrefreshed claim is treated as dead |
 

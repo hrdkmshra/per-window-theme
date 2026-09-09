@@ -208,7 +208,7 @@ activate()
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `perWindowTheme.themes` | `["Default Dark Modern", "Default Light Modern"]` | Ordered theme `settingsId`s; slot N gets entry N, wrapping. Defaults are builtin so the PoC works offline out of the box. |
+| `perWindowTheme.themes` | `["Dark Modern", "Light Modern"]` | Ordered theme `settingsId`s; slot N gets entry N, wrapping. Defaults are builtin so the PoC works offline out of the box. |
 | `perWindowTheme.enabled` | `true` | Kill switch. |
 | `perWindowTheme.heartbeatMs` | `5000` | Claim refresh interval. |
 | `perWindowTheme.staleMs` | `20000` | Claim expiry. Must be a few × heartbeat. |
