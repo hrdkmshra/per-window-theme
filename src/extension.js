@@ -17,7 +17,7 @@ const { folderKey } = require('./state/workspaceKey');
 
 const REGISTRY_FILE = 'windows.json';
 
-/** @type {Controller | undefined} */
+/** @type {import('./core/controller').Controller | undefined} */
 let controller;
 /** @type {NodeJS.Timeout | undefined} */
 let heartbeatTimer;

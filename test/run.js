@@ -6,6 +6,7 @@
 
 const { summary } = require('./harness');
 
+/** @type {[string, () => Promise<void>][]} */
 const suites = [
 	['registry', require('./registry.test')],
 	['decide', require('./decide.test')],

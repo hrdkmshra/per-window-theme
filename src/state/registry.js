@@ -114,4 +114,4 @@ class SlotRegistry {
 	}
 }
 
-module.exports = { SlotRegistry };
+module.exports.SlotRegistry = SlotRegistry;

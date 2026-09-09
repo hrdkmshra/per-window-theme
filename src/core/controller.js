@@ -14,9 +14,9 @@ const { folderKey, folderLabel } = require('../state/workspaceKey');
 class Controller {
 	/**
 	 * @param {object} deps
-	 * @param {import('./registry').SlotRegistry} deps.registry
-	 * @param {import('./memory').FolderMemory} deps.memory
-	 * @param {import('./statusBar').StatusBar} deps.statusBar
+	 * @param {import('../state/registry').SlotRegistry} deps.registry
+	 * @param {import('../state/memory').FolderMemory} deps.memory
+	 * @param {import('../ui/statusBar').StatusBar} deps.statusBar
 	 * @param {(message: string, ...actions: string[]) => Thenable<string|undefined>} deps.warn
 	 */
 	constructor({ registry, memory, statusBar, warn }) {
@@ -66,7 +66,7 @@ class Controller {
 			key,
 			list: config.themeList(),
 			slotNumber: this.slot === null ? 0 : this.slot,
-			strategy: config.unmappedStrategy(),
+			strategy: /** @type {'global'|'slot'|'hash'} */ (config.unmappedStrategy()),
 			label: folderLabel(key)
 		});
 		this.theme = d.theme;
@@ -93,12 +93,12 @@ class Controller {
 		if (!config.isEnabled()) {
 			trace(`skipped apply (${reason}): disabled`);
 			this.statusBar.hide();
-			return;
+			return undefined;
 		}
 		if (!this.theme) {
 			await this.restoreGlobal(reason);
 			this.render();
-			return;
+			return undefined;
 		}
 		this.lastOk = await applyTheme(this.theme);
 		this.lastAppliedAt = Date.now();
@@ -127,7 +127,7 @@ class Controller {
 	 */
 	async restoreGlobal(reason) {
 		if (!this.overriding) {
-			return;
+			return undefined;
 		}
 		const globalTheme = resolveGlobalThemeId(this.initialKind);
 		if (!globalTheme) {
@@ -184,4 +184,4 @@ class Controller {
 	}
 }
 
-module.exports = { Controller };
+module.exports.Controller = Controller;

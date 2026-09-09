@@ -27,9 +27,9 @@ function hashPick(key, list) {
  *      slot, or derive from the folder path
  *
  * @param {object} input
- * @param {string|null} input.pin explicit choice for this window
- * @param {Record<string, {theme: string}>} input.memory folder key -> remembered theme
- * @param {string|null} input.key folder key for this window, null when empty
+ * @param {string|null|undefined} input.pin explicit choice for this window
+ * @param {Record<string, {theme?: string}>} input.memory folder key -> remembered theme
+ * @param {string|null|undefined} input.key folder key for this window, null when empty
  * @param {string[]} input.list configured theme ids
  * @param {number} input.slotNumber this window's slot
  * @param {'global'|'slot'|'hash'} input.strategy what to do when nothing is set up

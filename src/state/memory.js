@@ -49,4 +49,5 @@ class FolderMemory {
 	}
 }
 
-module.exports = { FolderMemory, MEMORY_KEY: KEY };
+module.exports.FolderMemory = FolderMemory;
+module.exports.MEMORY_KEY = KEY;

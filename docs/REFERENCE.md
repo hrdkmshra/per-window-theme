@@ -91,12 +91,27 @@ theme could not be applied.
 ## Tests
 
 ```bash
+npm run typecheck            # type-check the JSDoc annotations (no build output)
 npm test                     # 46 headless tests: slots, decision tiers, folder memory, global resolution
 ./scripts/scenario.sh        # end-to-end in a real window: opt in, survive a global change, hand back
 ./scripts/selftest.sh        # throwaway VS Code, probes every theme, writes a JSON report
 BUILTIN_FARM=1 ./scripts/selftest.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
 ./scripts/demo.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0   # two live windows
 ```
+
+### Why plain JavaScript, not TypeScript
+
+Deliberate: the extension folder is symlinked straight into `~/.vscode/extensions`, so there is no
+compile step between editing a file and reloading a window, and `bootstrap.sh` can clone and run with
+no `npm install` and no build on the user's machine.
+
+Type safety is kept without giving that up: every module is JSDoc-annotated and `npm run typecheck`
+runs `tsc --noEmit` with `checkJs` over `src/` and `test/`, currently clean. TypeScript is a
+dev-only dependency; nothing at runtime needs it.
+
+Note that classes are exported as `module.exports.Thing = Thing` rather than
+`module.exports = { Thing }` — the latter is seen as `export=`, which stops
+`import('./mod').Thing` resolving in JSDoc types.
 
 `selftest.sh` and `demo.sh` use isolated `--user-data-dir` / `--extensions-dir`, so they cannot touch
 your real editor, settings, or extensions. No build step and no dependencies: the tests run on plain

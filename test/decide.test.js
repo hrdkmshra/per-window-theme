@@ -10,6 +10,8 @@ const { test } = require('./harness');
 const { decide, hashPick } = require('../src/core/decide');
 
 const LIST = ['Dracula Pro', 'Light Modern'];
+
+/** @type {Parameters<typeof decide>[0]} */
 const base = { pin: null, memory: {}, key: null, list: LIST, slotNumber: 0, strategy: 'slot' };
 
 module.exports = async function run() {
@@ -75,6 +77,7 @@ module.exports = async function run() {
 
 	// --- strategy: global (the default) ----------------------------------------
 
+	/** @type {Parameters<typeof decide>[0]} */
 	const globalBase = { ...base, strategy: 'global' };
 
 	await test('global strategy leaves an empty window alone', () => {
