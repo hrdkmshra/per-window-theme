@@ -38,30 +38,52 @@ extensions.
 Full derivation, with source citations and the four approaches that turned out to be dead ends, is in
 [.spec/SPEC.md](.spec/SPEC.md).
 
-## Install locally
+## Install in one line
 
-No build step, no dependencies, no packaging. Clone it and symlink it.
+Replace `OWNER/REPO` with your GitHub path (see [Publishing](#publishing) if you have not pushed yet):
 
 ```bash
-# 1. clone
-git clone <your-remote> per-window-theme
-cd per-window-theme
-
-# 2. sanity check (optional, ~1s, no VS Code involved)
-npm test
-
-# 3. link into VS Code's extension folder
-./scripts/install.sh
-
-# 4. fully quit VS Code — Cmd+Q, not just closing the window — and reopen
+curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/bootstrap.sh | bash
 ```
 
-Step 4 matters: VS Code caches scanned extension manifests, so a reload alone will not pick up a
-newly linked extension.
+Using a paid or privately distributed theme? Register it as built-in in the same run:
 
-Verify it worked: open two windows with no folder. They should show different themes, and the status
-bar should show a theme name in each. If not, run `Per-Window Theme: Show Status` from the command
-palette.
+```bash
+curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/bootstrap.sh \
+  | PWT_FARM="$HOME/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0" bash
+```
+
+Then **fully quit VS Code** (Cmd+Q, not just closing the window) and reopen.
+
+Piping a URL into a shell runs whatever that URL serves right now. To read it first:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/bootstrap.sh -o pwt.sh
+less pwt.sh && bash pwt.sh
+```
+
+`bootstrap.sh` clones to `~/.per-window-theme/app`, runs the tests if node is present, then links the
+clone into `~/.vscode/extensions`. Re-running it updates in place. Knobs: `PWT_REPO`, `PWT_REF`,
+`PWT_DIR`, `PWT_EXT_DIR`, `PWT_FARM`.
+
+## Install from a clone
+
+No build step, no dependencies, no packaging.
+
+```bash
+git clone https://github.com/OWNER/REPO.git per-window-theme
+cd per-window-theme
+npm test              # optional, ~1s, no VS Code involved
+./scripts/install.sh  # symlink into ~/.vscode/extensions
+```
+
+Then fully quit VS Code and reopen. That last step matters: VS Code caches scanned extension
+manifests, so a reload alone will not pick up a newly linked extension.
+
+Verify it worked: open two windows with no folder. They should show different themes, and each status
+bar should show a theme name. If not, run `Per-Window Theme: Show Status` from the command palette.
+
+## Configure
 
 ### Choose your themes
 
@@ -125,10 +147,22 @@ Every command, every setting, the module layout, and the test suite:
 
 ```bash
 rm ~/.vscode/extensions/local.per-window-theme-0.0.1   # the symlink only
+rm -rf ~/.per-window-theme                             # clone + built-in farm, if used
 ```
 
 Then quit and reopen VS Code. Your `workbench.colorTheme` was never modified, so every window goes
 back to your normal theme.
+
+## Publishing
+
+This repo has no remote yet, so the `raw.githubusercontent.com` URLs above 404 until you push:
+
+```bash
+gh repo create per-window-theme --private --source=. --remote=origin --push
+```
+
+Note that `raw.githubusercontent.com` only serves **public** repos anonymously. For a private repo,
+either clone it instead of using the one-liner, or make it public.
 
 ## Honest limitations
 
