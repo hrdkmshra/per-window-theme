@@ -58,6 +58,7 @@ module.exports = async function run() {
 		const a1 = decide({ ...base, key: 'file:///repo/a', strategy: 'hash', slotNumber: 0 }).theme;
 		const a2 = decide({ ...base, key: 'file:///repo/a', strategy: 'hash', slotNumber: 7 }).theme;
 		assert.strictEqual(a1, a2, 'same folder must always map to the same theme');
+		assert.ok(a1, 'hash strategy must return a theme when the list is non-empty');
 		assert.ok(LIST.includes(a1));
 	});
 

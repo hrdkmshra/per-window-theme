@@ -106,8 +106,12 @@ compile step between editing a file and reloading a window, and `bootstrap.sh` c
 no `npm install` and no build on the user's machine.
 
 Type safety is kept without giving that up: every module is JSDoc-annotated and `npm run typecheck`
-runs `tsc --noEmit` with `checkJs` over `src/` and `test/`, currently clean. TypeScript is a
-dev-only dependency; nothing at runtime needs it.
+runs `tsc --noEmit` with `checkJs` **and `strictNullChecks`** over `src/` and `test/`, currently
+clean. TypeScript is a dev-only dependency; nothing at runtime needs it.
+
+`noImplicitAny` is deliberately off. Turning it on adds 63 "parameter implicitly has an any type"
+errors — annotation paperwork with no defect among them — whereas `strictNullChecks` found a real
+pattern worth fixing. Measured, not assumed.
 
 Note that classes are exported as `module.exports.Thing = Thing` rather than
 `module.exports = { Thing }` — the latter is seen as `export=`, which stops

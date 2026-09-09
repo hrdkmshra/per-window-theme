@@ -44,25 +44,28 @@ async function activate(context) {
 	const statusBar = new StatusBar();
 	context.subscriptions.push(statusBar);
 
-	controller = new Controller({
+	// Held in a const so the event listeners below close over a non-nullable value;
+	// the module-level binding exists only so deactivate() can reach it.
+	const ctrl = new Controller({
 		registry,
 		memory: new FolderMemory(context.globalState),
 		statusBar,
 		warn: (message, ...actions) => vscode.window.showWarningMessage(message, ...actions)
 	});
-	context.subscriptions.push(controller);
+	controller = ctrl;
+	context.subscriptions.push(ctrl);
 
 	// The kind the workbench painted from settings, before we override anything.
 	// Needed to resolve the global theme id when following the OS color scheme.
-	controller.initialKind = vscode.window.activeColorTheme.kind;
+	ctrl.initialKind = vscode.window.activeColorTheme.kind;
 
 	logger.trace(`activate — session ${vscode.env.sessionId}, folder ${folderKey() || '(none)'}`);
 
-	await controller.claimSlot();
-	const decision = controller.recompute();
-	logger.trace(`slot ${controller.slot} -> "${decision.theme}" (${decision.source})`);
+	await ctrl.claimSlot();
+	const decision = ctrl.recompute();
+	logger.trace(`slot ${ctrl.slot} -> "${decision.theme}" (${decision.source})`);
 
-	const failureAction = await controller.apply('activate');
+	const failureAction = await ctrl.apply('activate');
 	if (failureAction === 'Diagnose') {
 		vscode.commands.executeCommand('perWindowTheme.diagnose');
 	} else if (failureAction === 'Pick another') {
@@ -72,7 +75,7 @@ async function activate(context) {
 	diagnostics.validateConfiguredThemes(controller);
 
 	heartbeatTimer = setInterval(
-		() => registry.heartbeat(controller.slot, folderKey()),
+		() => registry.heartbeat(ctrl.slot, folderKey()),
 		config.heartbeatMs()
 	);
 	context.subscriptions.push({ dispose: () => clearInterval(heartbeatTimer) });
@@ -81,39 +84,39 @@ async function activate(context) {
 		vscode.workspace.onDidChangeConfiguration(e => {
 			if (config.STOMP_KEYS.some(k => e.affectsConfiguration(k))) {
 				// The workbench just restored the theme from settings in every window.
-				controller.scheduleReapply('global theme setting changed');
+				ctrl.scheduleReapply('global theme setting changed');
 			}
 			if (e.affectsConfiguration(config.SECTION)) {
-				const d = controller.recompute();
+				const d = ctrl.recompute();
 				logger.trace(`config changed -> "${d.theme}" (${d.source})`);
-				controller.scheduleReapply('per-window config changed', 0);
+				ctrl.scheduleReapply('per-window config changed', 0);
 			}
 		}),
 
 		vscode.window.onDidChangeActiveColorTheme(theme => {
 			// Ignore the event our own apply just produced.
-			if (controller.justApplied()) {
+			if (ctrl.justApplied()) {
 				return;
 			}
 			// Not overriding this window? Then what just got painted IS the global
 			// theme, so track its kind — that keeps the global reference current for
 			// a later restore when VS Code follows the OS color scheme.
-			if (!controller.overriding) {
-				controller.initialKind = theme.kind;
+			if (!ctrl.overriding) {
+				ctrl.initialKind = theme.kind;
 			}
-			controller.scheduleReapply('active color theme changed underneath us');
+			ctrl.scheduleReapply('active color theme changed underneath us');
 		}),
 
 		// Catch a stomp that happened while this window was in the background.
 		vscode.window.onDidChangeWindowState(state => {
-			if (state.focused && !controller.justApplied(3000)) {
-				controller.scheduleReapply('window focused', 100);
+			if (state.focused && !ctrl.justApplied(3000)) {
+				ctrl.scheduleReapply('window focused', 100);
 			}
 		}),
 
 		// A folder added to or removed from an empty window changes the answer.
 		vscode.workspace.onDidChangeWorkspaceFolders(() => {
-			controller.unpin('workspace folders changed');
+			ctrl.unpin('workspace folders changed');
 		}),
 
 		...commands.registerAll(controller)

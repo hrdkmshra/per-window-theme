@@ -14,12 +14,14 @@ const KIND_NAMES = { 1: 'Light', 2: 'Dark', 3: 'HighContrast', 4: 'HighContrastL
 const kindName = k => KIND_NAMES[k] || String(k);
 
 async function run(outPath) {
+	/** @type {{settingsId: string, extensionId: string, version: string, resolved: boolean, returned: any, error: any, kindAfter: string}[]} */
+	const themes = [];
 	const report = {
 		vscodeVersion: vscode.version,
 		sessionId: vscode.env.sessionId,
 		commandAvailable: (await vscode.commands.getCommands(true)).includes('workbench.action.previewColorTheme'),
 		startingThemeKind: kindName(vscode.window.activeColorTheme.kind),
-		themes: []
+		themes
 	};
 
 	for (const t of listAllThemes()) {
@@ -36,7 +38,7 @@ async function run(outPath) {
 		}
 		// Let the workbench repaint so activeColorTheme reflects the new theme.
 		await new Promise(r => setTimeout(r, 120));
-		report.themes.push({
+		themes.push({
 			settingsId: t.settingsId,
 			extensionId: t.extensionId,
 			version: t.version,
@@ -47,8 +49,8 @@ async function run(outPath) {
 		});
 	}
 
-	report.resolved = report.themes.filter(t => t.resolved).length;
-	report.unresolved = report.themes.filter(t => !t.resolved).length;
+	report.resolved = themes.filter(t => t.resolved).length;
+	report.unresolved = themes.filter(t => !t.resolved).length;
 
 	await fsp.writeFile(outPath, JSON.stringify(report, null, '\t'), 'utf8');
 	await vscode.commands.executeCommand('workbench.action.quit');
