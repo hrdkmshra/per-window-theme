@@ -4,6 +4,7 @@ const config = require('../config/settings');
 const { trace } = require('../debug/logger');
 const { decide } = require('./decide');
 const { applyTheme, listAllThemes } = require('../theme/themeService');
+const { resolveGlobalThemeId } = require('../theme/globalTheme');
 const { folderKey, folderLabel } = require('../state/workspaceKey');
 
 /**
@@ -38,6 +39,16 @@ class Controller {
 		this.reapplyTimer = undefined;
 		/** Result of the last apply, for the status bar. */
 		this.lastOk = true;
+		/**
+		 * Whether this window is currently showing a theme we applied. Lets us tell
+		 * "leave the global theme alone" from "put the global theme back".
+		 */
+		this.overriding = false;
+		/**
+		 * The theme kind the workbench painted before we touched anything. Used to
+		 * resolve the global theme id when VS Code follows the OS color scheme.
+		 */
+		this.initialKind = undefined;
 	}
 
 	async claimSlot() {
@@ -85,11 +96,13 @@ class Controller {
 			return;
 		}
 		if (!this.theme) {
+			await this.restoreGlobal(reason);
 			this.render();
 			return;
 		}
 		this.lastOk = await applyTheme(this.theme);
 		this.lastAppliedAt = Date.now();
+		this.overriding = this.overriding || this.lastOk;
 		trace(this.lastOk
 			? `applied "${this.theme}" — ${this.source} (${reason})`
 			: `failed to apply "${this.theme}" (${reason})`);
@@ -106,6 +119,28 @@ class Controller {
 			}
 		}
 		return undefined;
+	}
+
+	/**
+	 * Hand the window back to the global theme. A no-op unless we had actually
+	 * overridden it, so a window with no per-window setup is never repainted.
+	 */
+	async restoreGlobal(reason) {
+		if (!this.overriding) {
+			return;
+		}
+		const globalTheme = resolveGlobalThemeId(this.initialKind);
+		if (!globalTheme) {
+			trace(`nothing to restore: no global theme configured (${reason})`);
+			this.overriding = false;
+			return;
+		}
+		const ok = await applyTheme(globalTheme);
+		this.lastAppliedAt = Date.now();
+		this.overriding = !ok;
+		trace(ok
+			? `restored global theme "${globalTheme}" (${reason})`
+			: `could not restore global theme "${globalTheme}" (${reason})`);
 	}
 
 	render() {

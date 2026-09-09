@@ -28,13 +28,24 @@ Three rules, first match wins:
 | --- | --- | --- |
 | 1 | **This window, explicitly** | `Pick Theme (This Window)` or `Cycle Theme`. Lasts until the window is closed |
 | 2 | **Remembered for this folder** | `Remember Theme For This Folder` — that directory then opens with that theme every time, in any window |
-| 3 | **Window slot** | Automatic. First window gets `themes[0]`, second `themes[1]`, wrapping |
+| 3 | **Fallback**, per `unmappedStrategy` | `global` (default) leaves your normal theme in place; `slot` rotates by window order; `hash` derives from the folder path |
+
+Because tiers 1 and 2 beat the fallback, changing your global theme never overrides a window that has
+its own: windows with no setup follow the new global theme, and windows with a pick or a remembered
+folder re-apply theirs within about a second.
+
+`global` is a true handback, not just "skip". If a window is already showing a theme we applied and
+then loses its reason to — you clear the folder mapping, say — the extension actively restores the
+global theme. Since the API exposes only the current theme's *kind* and never its id, that id is
+resolved from settings the same way the workbench does, honouring `window.autoDetectColorScheme` and
+`window.autoDetectHighContrast` ([src/theme/globalTheme.js](../src/theme/globalTheme.js)).
 
 Folder memory is stored in the extension's own state, **never** in `.vscode/settings.json`, so
 nothing lands in your repos and nothing gets committed by accident.
 
-Set `perWindowTheme.unmappedStrategy` to `hash` and even unremembered folders get a stable theme
-derived from their path — the same repo always looks the same, with zero configuration.
+Change `perWindowTheme.unmappedStrategy` from `global` to `slot` for automatic per-window rotation, or
+to `hash` to derive a stable theme from the folder path — the same repo always looks the same, with no
+picking at all.
 
 ## Commands
 
@@ -61,9 +72,9 @@ theme could not be applied.
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `perWindowTheme.enabled` | `true` | Kill switch |
-| `perWindowTheme.themes` | `["Dark Modern", "Light Modern"]` | Ordered theme ids, one per window slot, wrapping |
+| `perWindowTheme.themes` | `["Dark Modern", "Light Modern"]` | Theme ids offered by the picker, and used in order by the `slot` / `hash` strategies |
 | `perWindowTheme.rememberFolders` | `true` | Remember a theme per directory |
-| `perWindowTheme.unmappedStrategy` | `"slot"` | `slot` = by window order; `hash` = stable per folder path |
+| `perWindowTheme.unmappedStrategy` | `"global"` | `global` = keep your normal theme; `slot` = by window order; `hash` = stable per folder path |
 | `perWindowTheme.showStatusBar` | `true` | Show the theme in the status bar |
 | `perWindowTheme.notifyOnFailure` | `true` | Warn instead of failing silently |
 | `perWindowTheme.heartbeatMs` | `5000` | How often a window refreshes its slot claim |
@@ -112,6 +123,7 @@ src/
     workspaceKey.js       how a window identifies its folder
   theme/
     themeService.js       installed themes + the previewColorTheme call
+    globalTheme.js        resolves the theme the workbench would show on its own
   ui/
     statusBar.js          status item and tooltip
     commands.js           user-facing command implementations

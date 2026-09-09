@@ -52,6 +52,10 @@ async function activate(context) {
 	});
 	context.subscriptions.push(controller);
 
+	// The kind the workbench painted from settings, before we override anything.
+	// Needed to resolve the global theme id when following the OS color scheme.
+	controller.initialKind = vscode.window.activeColorTheme.kind;
+
 	logger.trace(`activate — session ${vscode.env.sessionId}, folder ${folderKey() || '(none)'}`);
 
 	await controller.claimSlot();
@@ -86,10 +90,16 @@ async function activate(context) {
 			}
 		}),
 
-		vscode.window.onDidChangeActiveColorTheme(() => {
+		vscode.window.onDidChangeActiveColorTheme(theme => {
 			// Ignore the event our own apply just produced.
 			if (controller.justApplied()) {
 				return;
+			}
+			// Not overriding this window? Then what just got painted IS the global
+			// theme, so track its kind — that keeps the global reference current for
+			// a later restore when VS Code follows the OS color scheme.
+			if (!controller.overriding) {
+				controller.initialKind = theme.kind;
 			}
 			controller.scheduleReapply('active color theme changed underneath us');
 		}),

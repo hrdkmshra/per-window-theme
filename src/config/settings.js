@@ -35,7 +35,7 @@ module.exports = {
 	themeList,
 	isEnabled: () => raw().get('enabled', true),
 	rememberFolders: () => raw().get('rememberFolders', true),
-	unmappedStrategy: () => raw().get('unmappedStrategy', 'slot'),
+	unmappedStrategy: () => raw().get('unmappedStrategy', 'global'),
 	showStatusBar: () => raw().get('showStatusBar', true),
 	notifyOnFailure: () => raw().get('notifyOnFailure', true),
 	heartbeatMs: () => raw().get('heartbeatMs', 5000),

@@ -17,15 +17,20 @@ class StatusBar {
 	 * @param {{theme: string|null, source: string, slot: number|null, ok: boolean}} state
 	 */
 	render({ theme, source, slot, ok }) {
-		if (!config.showStatusBar() || !config.isEnabled() || !theme) {
+		if (!config.showStatusBar() || !config.isEnabled()) {
 			this.item.hide();
 			return;
 		}
-		this.item.text = `$(symbol-color) ${theme}${ok === false ? ' $(warning)' : ''}`;
+		// No per-window theme: still show an entry, so the picker stays one click away.
+		this.item.text = theme
+			? `$(symbol-color) ${theme}${ok === false ? ' $(warning)' : ''}`
+			: '$(symbol-color) global';
 		this.item.tooltip = new vscode.MarkdownString([
 			'**Per-Window Theme**',
 			'',
-			`Theme: \`${theme}\`${ok === false ? ' — **could not be applied**' : ''}`,
+			theme
+				? `Theme: \`${theme}\`${ok === false ? ' — **could not be applied**' : ''}`
+				: 'Theme: your normal global theme',
 			`Reason: ${source}`,
 			`Window slot: ${slot === null ? '—' : slot}`,
 			`Folder: ${folderLabel(folderKey())}`,

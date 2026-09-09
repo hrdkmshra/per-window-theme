@@ -94,9 +94,26 @@ bar should show a theme name. If not, run `Per-Window Theme: Show Status` from t
 }
 ```
 
-First window gets the first entry, second the second, wrapping for more. Use the theme's **id** —
-which is its `id` field, or its display `label` when it has no `id`. Run
-`Per-Window Theme: Diagnose Theme Resolution` to print every valid id on your machine.
+This is the list the picker offers. Use the theme's **id** — its `id` field, or its display `label`
+when it has no `id`. Run `Per-Window Theme: Diagnose Theme Resolution` to print every valid id on
+your machine.
+
+**Nothing changes until you opt a window or a folder in.** By default a window keeps your normal
+global theme; it only gets its own once you pick one for it, or remember one for its directory. And
+once a window has its own theme, changing the global theme cannot take it away — the other windows
+follow the new global theme, that one keeps what you gave it.
+
+Want every window to differ automatically, with no picking?
+
+```jsonc
+{
+  // first window gets themes[0], second themes[1], wrapping around
+  "perWindowTheme.unmappedStrategy": "slot",
+
+  // or: derive from the folder path, so a repo always looks the same
+  "perWindowTheme.unmappedStrategy": "hash"
+}
+```
 
 ### If you use a paid or privately distributed theme
 

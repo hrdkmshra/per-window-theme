@@ -42,7 +42,7 @@
             "Dark Modern",
             "Light Modern"
           ],
-          "markdownDescription": "Ordered list of theme ids (the `settingsId`, i.e. the theme's `id` or its `label`). Window slot N gets entry N, wrapping around. Defaults are built-in themes so they resolve offline."
+          "markdownDescription": "Ordered list of theme ids (the `settingsId`, i.e. the theme's `id` or its `label`). Used by the theme picker, and by `perWindowTheme.unmappedStrategy` when it is set to `slot` or `hash`. Defaults are built-in themes so they resolve offline."
         },
         "perWindowTheme.rememberFolders": {
           "type": "boolean",
@@ -52,15 +52,17 @@
         "perWindowTheme.unmappedStrategy": {
           "type": "string",
           "enum": [
+            "global",
             "slot",
             "hash"
           ],
           "enumDescriptions": [
-            "Rotate through the theme list by window order: first window gets the first theme, and so on.",
+            "Leave the window on your normal global theme. Only windows you pick a theme for, or folders you have remembered, get their own.",
+            "Rotate through the theme list by window order: first window gets the first theme, second the second, wrapping around.",
             "Derive the theme from the folder path, so an unremembered folder still gets a stable theme every time."
           ],
-          "default": "slot",
-          "description": "How to choose a theme for a folder that has nothing remembered."
+          "default": "global",
+          "markdownDescription": "What to do for a window with no explicit pick and no remembered folder. `global` keeps VS Code's usual behaviour until you opt a window or folder in."
         },
         "perWindowTheme.showStatusBar": {
           "type": "boolean",

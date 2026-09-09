@@ -23,7 +23,8 @@ function hashPick(key, list) {
  * Decide what a window should show, and why. First match wins:
  *   1. an explicit pick in this window
  *   2. a theme remembered for the open folder
- *   3. the window's slot (or a hash of the folder path)
+ *   3. whatever `strategy` says: hand back to the global theme, rotate by window
+ *      slot, or derive from the folder path
  *
  * @param {object} input
  * @param {string|null} input.pin explicit choice for this window
@@ -31,7 +32,9 @@ function hashPick(key, list) {
  * @param {string|null} input.key folder key for this window, null when empty
  * @param {string[]} input.list configured theme ids
  * @param {number} input.slotNumber this window's slot
- * @param {'slot'|'hash'} input.strategy how to handle an unremembered folder
+ * @param {'global'|'slot'|'hash'} input.strategy what to do when nothing is set up
+ *   for this window: leave the global theme alone, rotate by window order, or derive
+ *   from the folder path
  * @param {string} [input.label] human-readable folder name, for the reason string
  * @returns {{theme: string|null, source: string}}
  */
@@ -41,6 +44,10 @@ function decide({ pin, memory, key, list, slotNumber, strategy, label }) {
 	}
 	if (key && memory && memory[key] && memory[key].theme) {
 		return { theme: memory[key].theme, source: `remembered for ${label || key}` };
+	}
+	if (strategy === 'global') {
+		// Nothing set up for this window or its folder: the global theme owns it.
+		return { theme: null, source: 'global theme (nothing set up for this window)' };
 	}
 	if (!list.length) {
 		return { theme: null, source: 'no themes configured' };

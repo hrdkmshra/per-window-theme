@@ -72,6 +72,7 @@ cat > "$UD/User/settings.json" <<EOF
 		"$THEME_2"
 	],
 	"workbench.colorTheme": "Dark Modern",
+	"perWindowTheme.unmappedStrategy": "slot",
 	"window.newWindowProfile": "Default",
 	"workbench.startupEditor": "none",
 	"window.restoreWindows": "none",
@@ -127,6 +128,9 @@ cat <<EOF
 
 Two sandboxed windows are open. Things to try:
 
+  0. NOTE: this demo sets unmappedStrategy=slot so both windows differ immediately.
+     The shipped default is "global": a window keeps your normal theme until you
+     pick one for it or remember one for its folder. Try that flow in step 3.
   1. Look at them side by side - different themes, at the same time, no workspace file.
   2. Click the theme name in the status bar - picks a theme for that window only.
   3. Pick one, then choose "Remember" - that folder keeps it. Reload the window

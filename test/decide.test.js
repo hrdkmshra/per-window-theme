@@ -73,6 +73,47 @@ module.exports = async function run() {
 		assert.match(d.source, /slot 1/);
 	});
 
+	// --- strategy: global (the default) ----------------------------------------
+
+	const globalBase = { ...base, strategy: 'global' };
+
+	await test('global strategy leaves an empty window alone', () => {
+		const d = decide({ ...globalBase, key: null, slotNumber: 0 });
+		assert.strictEqual(d.theme, null, 'must not claim a theme');
+		assert.match(d.source, /global theme/);
+	});
+
+	await test('global strategy leaves an unremembered folder alone', () => {
+		const memory = { 'file:///repo/other': { theme: 'Monokai' } };
+		assert.strictEqual(decide({ ...globalBase, memory, key: 'file:///repo/a' }).theme, null);
+	});
+
+	await test('global strategy still honours a remembered folder', () => {
+		const memory = { 'file:///repo/a': { theme: 'Monokai' } };
+		const d = decide({ ...globalBase, memory, key: 'file:///repo/a' });
+		assert.strictEqual(d.theme, 'Monokai', 'opting a folder in must beat the global fallback');
+		assert.match(d.source, /remembered/);
+	});
+
+	await test('global strategy still honours an explicit window pick', () => {
+		const d = decide({ ...globalBase, pin: 'Abyss', key: null });
+		assert.strictEqual(d.theme, 'Abyss');
+		assert.match(d.source, /this window/);
+	});
+
+	await test('global strategy ignores window slot entirely', () => {
+		for (const slotNumber of [0, 1, 2, 9]) {
+			assert.strictEqual(decide({ ...globalBase, slotNumber }).theme, null,
+				`slot ${slotNumber} should not be assigned a theme`);
+		}
+	});
+
+	await test('global strategy does not need a configured theme list', () => {
+		const d = decide({ ...globalBase, list: [], key: 'file:///repo/a' });
+		assert.strictEqual(d.theme, null);
+		assert.match(d.source, /global theme/);
+	});
+
 	await test('no themes configured decides nothing (T11)', () => {
 		const d = decide({ ...base, list: [] });
 		assert.strictEqual(d.theme, null);

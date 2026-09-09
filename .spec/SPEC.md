@@ -217,8 +217,18 @@ reportable in the UI. First match wins:
    Deliberately not workspace settings: no `.vscode/settings.json` is created, so nothing can be
    committed into a repo by accident. Key is the `.code-workspace` URI when there is one, else the
    first workspace folder URI, else `null` for an empty window.
-3. **Unmapped** — `slot` strategy walks the theme list by window order; `hash` strategy takes
-   `sha1(folderKey) % list.length`, so a folder is stable across windows and machines with no setup.
+3. **Fallback**, chosen by `unmappedStrategy`:
+   - `global` (default) — return no theme and let the workbench keep ownership of the window. Opt-in
+     model: the extension is invisible until a window or folder is deliberately given a theme.
+   - `slot` — walk the theme list by window order.
+   - `hash` — `sha1(folderKey) % list.length`, so a folder is stable across windows and machines.
+
+   `global` needs an active handback, not just a skipped apply: a window that was overridden and then
+   loses its reason must be repainted with the global theme. C6 means we cannot read the current theme
+   id, so it is recomputed from settings exactly as `ThemeConfiguration.getColorThemeSettingId()` does,
+   using the theme kind captured at activation (`Controller.initialKind`, refreshed whenever the
+   workbench repaints a window we are not overriding). `Controller.overriding` tracks whether a
+   handback is owed, so a window that never had a per-window theme is never repainted.
 
 Clearing is a first-class operation: per folder (`forgetFolder`) or all of it (`clearMemory`, behind a
 modal confirm).
