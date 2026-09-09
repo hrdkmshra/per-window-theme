@@ -31,7 +31,14 @@ fi
 if pgrep -f "$UD" >/dev/null 2>&1; then
 	echo "closing sandbox windows from a previous run"
 	pkill -f "$UD" || true
-	sleep 3
+	# Wait for them to actually exit. A dying window keeps heartbeating its slot
+	# claim, which would push the new windows onto slots 2 and 3.
+	for _ in $(seq 1 20); do
+		pgrep -f "$UD" >/dev/null 2>&1 || break
+		sleep 1
+	done
+	pgrep -f "$UD" >/dev/null 2>&1 && pkill -9 -f "$UD" || true
+	sleep 1
 fi
 
 mkdir -p "$UD/User" "$EXT" "$FARM"
@@ -70,6 +77,11 @@ cat > "$UD/User/settings.json" <<EOF
 }
 EOF
 
+# Two folders, so folder memory is testable (not just slot rotation).
+mkdir -p "$DEMO/repo-a" "$DEMO/repo-b"
+printf '# repo-a\n\nDemo folder for Per-Window Theme.\n' > "$DEMO/repo-a/README.md"
+printf '# repo-b\n\nDemo folder for Per-Window Theme.\n' > "$DEMO/repo-b/README.md"
+
 LAUNCH=(code
 	--user-data-dir "$UD"
 	--extensions-dir "$EXT"
@@ -79,12 +91,12 @@ LAUNCH=(code
 	--skip-welcome
 	--new-window)
 
-echo "window 1 -> slot 0 -> \"$THEME_1\""
-"${LAUNCH[@]}" >"$DEMO/window1.log" 2>&1 &
+echo "window 1 -> repo-a -> slot 0 -> \"$THEME_1\""
+"${LAUNCH[@]}" "$DEMO/repo-a" >"$DEMO/window1.log" 2>&1 &
 sleep 14
 
-echo "window 2 -> slot 1 -> \"$THEME_2\""
-"${LAUNCH[@]}" >"$DEMO/window2.log" 2>&1 &
+echo "window 2 -> repo-b -> slot 1 -> \"$THEME_2\""
+"${LAUNCH[@]}" "$DEMO/repo-b" >"$DEMO/window2.log" 2>&1 &
 sleep 10
 
 echo
@@ -112,12 +124,14 @@ cat <<EOF
 
 Two sandboxed windows are open. Things to try:
 
-  1. Look at them side by side - different themes, at the same time, no workspace.
-  2. In either window: Cmd+Shift+P -> "Per-Window Theme: Show Status"
-  3. Cmd+Shift+P -> "Per-Window Theme: Cycle Theme (This Window)" - only that window changes.
-  4. Cmd+K Cmd+T and pick any theme - both windows snap back to their own within ~1s (T5).
-  5. Cmd+Shift+P -> "Developer: Reload Window" - brief flash, then its own theme returns (T6).
-  6. Close window 1, open a new one (Cmd+Shift+N) - it takes the freed slot 0 (T7).
+  1. Look at them side by side - different themes, at the same time, no workspace file.
+  2. Click the theme name in the status bar - picks a theme for that window only.
+  3. Pick one, then choose "Remember" - that folder keeps it. Reload the window
+     (Cmd+Shift+P -> Developer: Reload Window) and it comes back on its own.
+  4. Cmd+Shift+P -> "Per-Window Theme: Show Status" - says WHY this window has this theme.
+  5. Cmd+Shift+P -> "Per-Window Theme: Show Remembered Folders" / "Clear All Remembered Folders".
+  6. Cmd+K Cmd+T and pick any theme - both windows snap back to their own within ~1s (T5).
+  7. Close window 1, open a new one (Cmd+Shift+N) - it takes the freed slot 0 (T7).
 
 Sandbox: $DEMO
 Tear down: close both windows, then delete $DEMO
