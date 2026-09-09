@@ -17,6 +17,27 @@ const { folderKey } = require('./state/workspaceKey');
 
 const REGISTRY_FILE = 'windows.json';
 
+/**
+ * Tell the user a theme could not be applied, and offer the two things worth doing
+ * about it. Lives here rather than in the controller so that applying a theme and
+ * talking to the user stay separate concerns.
+ *
+ * @param {string} theme
+ */
+function reportApplyFailure(theme) {
+	vscode.window.showWarningMessage(
+		`Per-Window Theme could not apply "${theme}" in this window.`,
+		'Diagnose',
+		'Pick another'
+	).then(choice => {
+		if (choice === 'Diagnose') {
+			vscode.commands.executeCommand('perWindowTheme.diagnose');
+		} else if (choice === 'Pick another') {
+			vscode.commands.executeCommand('perWindowTheme.pick');
+		}
+	});
+}
+
 /** @type {import('./core/controller').Controller | undefined} */
 let controller;
 /** @type {NodeJS.Timeout | undefined} */
@@ -50,7 +71,7 @@ async function activate(context) {
 		registry,
 		memory: new FolderMemory(context.globalState),
 		statusBar,
-		warn: (message, ...actions) => vscode.window.showWarningMessage(message, ...actions)
+		onApplyFailed: reportApplyFailure
 	});
 	controller = ctrl;
 	context.subscriptions.push(ctrl);
@@ -65,14 +86,8 @@ async function activate(context) {
 	const decision = ctrl.recompute();
 	logger.trace(`slot ${ctrl.slot} -> "${decision.theme}" (${decision.source})`);
 
-	const failureAction = await ctrl.apply('activate');
-	if (failureAction === 'Diagnose') {
-		vscode.commands.executeCommand('perWindowTheme.diagnose');
-	} else if (failureAction === 'Pick another') {
-		vscode.commands.executeCommand('perWindowTheme.pick');
-	}
-
-	diagnostics.validateConfiguredThemes(controller);
+	await ctrl.apply('activate');
+	diagnostics.validateConfiguredThemes(ctrl);
 
 	heartbeatTimer = setInterval(
 		() => registry.heartbeat(ctrl.slot, folderKey()),

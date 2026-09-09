@@ -17,13 +17,14 @@ class Controller {
 	 * @param {import('../state/registry').SlotRegistry} deps.registry
 	 * @param {import('../state/memory').FolderMemory} deps.memory
 	 * @param {import('../ui/statusBar').StatusBar} deps.statusBar
-	 * @param {(message: string, ...actions: string[]) => Thenable<string|undefined>} deps.warn
+	 * @param {(theme: string) => void} [deps.onApplyFailed] told when a theme could not
+	 *   be applied. Reporting it, and any UI that follows, belongs to the caller.
 	 */
-	constructor({ registry, memory, statusBar, warn }) {
+	constructor({ registry, memory, statusBar, onApplyFailed }) {
 		this.registry = registry;
 		this.memory = memory;
 		this.statusBar = statusBar;
-		this.warn = warn;
+		this.onApplyFailed = onApplyFailed || (() => { });
 
 		/** Slot this window owns, or null before it is claimed. */
 		this.slot = null;
@@ -89,16 +90,20 @@ class Controller {
 		await this.apply(reason);
 	}
 
+	/**
+	 * Apply this window's intended theme. Applying is all this does: a failure is
+	 * announced through `onApplyFailed`, so nothing here knows about dialogs.
+	 */
 	async apply(reason) {
 		if (!config.isEnabled()) {
 			trace(`skipped apply (${reason}): disabled`);
 			this.statusBar.hide();
-			return undefined;
+			return;
 		}
 		if (!this.theme) {
 			await this.restoreGlobal(reason);
 			this.render();
-			return undefined;
+			return;
 		}
 		this.lastOk = await applyTheme(this.theme);
 		this.lastAppliedAt = Date.now();
@@ -109,16 +114,8 @@ class Controller {
 		this.render();
 
 		if (!this.lastOk && config.notifyOnFailure()) {
-			const choice = await this.warn(
-				`Per-Window Theme could not apply "${this.theme}" in this window.`,
-				'Diagnose',
-				'Pick another'
-			);
-			if (choice) {
-				return choice;
-			}
+			this.onApplyFailed(this.theme);
 		}
-		return undefined;
 	}
 
 	/**
