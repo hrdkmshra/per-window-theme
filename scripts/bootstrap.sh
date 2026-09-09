@@ -2,11 +2,11 @@
 # One-shot installer: clone (or update) Per-Window Theme, then link it into VS Code.
 #
 # Designed to be piped from a raw URL:
-#   curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/bootstrap.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/hrdkmshra/per-window-theme/main/scripts/bootstrap.sh | bash
 #
 # Piping a remote script into a shell runs whatever that URL currently serves. If you
 # would rather read it first:
-#   curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/bootstrap.sh -o pwt.sh
+#   curl -fsSL https://raw.githubusercontent.com/hrdkmshra/per-window-theme/main/scripts/bootstrap.sh -o pwt.sh
 #   less pwt.sh && bash pwt.sh
 #
 # Env:
@@ -17,17 +17,13 @@
 #   PWT_FARM    space-separated theme extension dirs to register as built-in
 set -euo pipefail
 
-REPO="${PWT_REPO:-https://github.com/OWNER/REPO.git}"
+REPO="${PWT_REPO:-https://github.com/hrdkmshra/per-window-theme.git}"
 REF="${PWT_REF:-main}"
 DIR="${PWT_DIR:-$HOME/.per-window-theme/app}"
 
 die() { echo "error: $*" >&2; exit 1; }
 
 command -v git >/dev/null 2>&1 || die "git is required"
-
-case "$REPO" in
-	*OWNER/REPO*) die "set PWT_REPO to your clone URL, or edit the default in this script" ;;
-esac
 
 if [ -d "$DIR/.git" ]; then
 	echo "updating existing clone at $DIR"

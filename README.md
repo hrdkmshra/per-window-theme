@@ -40,16 +40,16 @@ Full derivation, with source citations and the four approaches that turned out t
 
 ## Install in one line
 
-Replace `OWNER/REPO` with your GitHub path (see [Publishing](#publishing) if you have not pushed yet):
+Replace `hrdkmshra/per-window-theme` with your GitHub path (see [Publishing](#publishing) if you have not pushed yet):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hrdkmshra/per-window-theme/main/scripts/bootstrap.sh | bash
 ```
 
 Using a paid or privately distributed theme? Register it as built-in in the same run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/bootstrap.sh \
+curl -fsSL https://raw.githubusercontent.com/hrdkmshra/per-window-theme/main/scripts/bootstrap.sh \
   | PWT_FARM="$HOME/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0" bash
 ```
 
@@ -58,7 +58,7 @@ Then **fully quit VS Code** (Cmd+Q, not just closing the window) and reopen.
 Piping a URL into a shell runs whatever that URL serves right now. To read it first:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/bootstrap.sh -o pwt.sh
+curl -fsSL https://raw.githubusercontent.com/hrdkmshra/per-window-theme/main/scripts/bootstrap.sh -o pwt.sh
 less pwt.sh && bash pwt.sh
 ```
 
@@ -71,7 +71,7 @@ clone into `~/.vscode/extensions`. Re-running it updates in place. Knobs: `PWT_R
 No build step, no dependencies, no packaging.
 
 ```bash
-git clone https://github.com/OWNER/REPO.git per-window-theme
+git clone https://github.com/hrdkmshra/per-window-theme.git
 cd per-window-theme
 npm test              # optional, ~1s, no VS Code involved
 ./scripts/install.sh  # symlink into ~/.vscode/extensions
@@ -170,16 +170,18 @@ rm -rf ~/.per-window-theme                             # clone + built-in farm, 
 Then quit and reopen VS Code. Your `workbench.colorTheme` was never modified, so every window goes
 back to your normal theme.
 
-## Publishing
+## Forking
 
-This repo has no remote yet, so the `raw.githubusercontent.com` URLs above 404 until you push:
+The one-liner above installs from `hrdkmshra/per-window-theme`. To run your own copy, point the
+installer at it:
 
 ```bash
-gh repo create per-window-theme --private --source=. --remote=origin --push
+PWT_REPO=https://github.com/YOU/your-fork.git \
+  bash <(curl -fsSL https://raw.githubusercontent.com/YOU/your-fork/main/scripts/bootstrap.sh)
 ```
 
-Note that `raw.githubusercontent.com` only serves **public** repos anonymously. For a private repo,
-either clone it instead of using the one-liner, or make it public.
+`raw.githubusercontent.com` only serves **public** repos anonymously, so a private fork needs the
+clone install instead.
 
 ## Honest limitations
 
