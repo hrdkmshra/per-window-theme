@@ -1,0 +1,84 @@
+{
+  "name": "per-window-theme",
+  "displayName": "Per-Window Theme",
+  "description": "Give each VS Code window its own color theme, without workspace files.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Themes",
+    "Other"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "*"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true,
+      "description": "Only reads its own settings and applies a color theme to this window; never executes workspace content."
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "configuration": {
+      "title": "Per-Window Theme",
+      "properties": {
+        "perWindowTheme.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Assign a distinct color theme to each window."
+        },
+        "perWindowTheme.themes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "Default Dark Modern",
+            "Default Light Modern"
+          ],
+          "markdownDescription": "Ordered list of theme ids (the `settingsId`, i.e. the theme's `id` or its `label`). Window slot N gets entry N, wrapping around. Defaults are built-in themes so they resolve offline."
+        },
+        "perWindowTheme.heartbeatMs": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "description": "How often this window refreshes its slot claim."
+        },
+        "perWindowTheme.staleMs": {
+          "type": "number",
+          "default": 20000,
+          "minimum": 5000,
+          "description": "A slot claim not refreshed within this window is considered dead and reclaimable. Keep it a few times larger than the heartbeat."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "perWindowTheme.cycle",
+        "title": "Per-Window Theme: Cycle Theme (This Window)"
+      },
+      {
+        "command": "perWindowTheme.pick",
+        "title": "Per-Window Theme: Pick Theme (This Window)"
+      },
+      {
+        "command": "perWindowTheme.reapply",
+        "title": "Per-Window Theme: Re-apply Theme"
+      },
+      {
+        "command": "perWindowTheme.status",
+        "title": "Per-Window Theme: Show Status"
+      },
+      {
+        "command": "perWindowTheme.diagnose",
+        "title": "Per-Window Theme: Diagnose Theme Resolution"
+      }
+    ]
+  }
+}
