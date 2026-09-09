@@ -3,7 +3,7 @@
 const fsp = require('fs/promises');
 
 /**
- * Slot registry (SPEC.md §5). Windows cooperate through one JSON file with
+ * Slot registry (.spec/SPEC.md §5). Windows cooperate through one JSON file with
  * heartbeat-expiring claims, so a crashed window's slot is reclaimed on its own.
  *
  * No `vscode` import: everything it needs is injected, which is what lets

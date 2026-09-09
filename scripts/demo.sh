@@ -53,7 +53,7 @@ find "$UD/Backups" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
 rm -f "$EXT/extensions.json"
 ln -sfn "$ROOT" "$EXT/local.per-window-theme-0.0.1"
 
-# Built-in farm, so non-gallery themes resolve locally (SPEC.md §4).
+# Built-in farm, so non-gallery themes resolve locally (.spec/SPEC.md §4).
 find "$FARM" -maxdepth 1 -mindepth 1 -type l -exec rm {} + 2>/dev/null || true
 for d in "$APP_EXT"/*; do
 	[ -e "$d" ] || continue

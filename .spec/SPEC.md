@@ -17,14 +17,14 @@ fixed by §4.
 | --- | --- |
 | `workbench.colorTheme` in User settings | One value shared by every window. |
 | `workbench.colorTheme` in Workspace/Folder settings | Works, but requires a workspace/folder per theme — explicitly rejected. |
-| A new "window" config scope | Doesn't exist. `ConfigurationScope.WINDOW` means *"configurable in user or workspace settings"* — both shared. ([configurationRegistry.ts:142-145](../vscode-main/src/vs/platform/configuration/common/configurationRegistry.ts#L142-L145)) |
+| A new "window" config scope | Doesn't exist. `ConfigurationScope.WINDOW` means *"configurable in user or workspace settings"* — both shared. ([configurationRegistry.ts:142-145](../../vscode-main/src/vs/platform/configuration/common/configurationRegistry.ts#L142-L145)) |
 | `workbench.colorCustomizations` | Also a setting → also global. Dead end, do not attempt. |
 | Profiles (`code --profile X`) | Genuinely per-window, but a profile carries its own settings *and* extension set, and needs a window relaunch. Kept as fallback, not the design. |
 
 ## 2. The mechanism this design uses
 
 Theme application and theme *persistence* are separate steps in VS Code. The write is gated on the
-`settingsTarget` argument — [themeConfiguration.ts:364-367](../vscode-main/src/vs/workbench/services/themes/common/themeConfiguration.ts#L364-L367):
+`settingsTarget` argument — [themeConfiguration.ts:364-367](../../vscode-main/src/vs/workbench/services/themes/common/themeConfiguration.ts#L364-L367):
 
 ```ts
 private async writeConfiguration(key: string, value: unknown, settingsTarget: ThemeSettingTarget): Promise<void> {
@@ -35,7 +35,7 @@ private async writeConfiguration(key: string, value: unknown, settingsTarget: Th
 
 With `settingsTarget === 'preview'` the theme is fully applied to the current window — CSS custom
 properties recomputed and swapped in `applyTheme` — while **nothing** is written to settings and
-nothing is written to storage ([workbenchThemeService.ts:521-523](../vscode-main/src/vs/workbench/services/themes/browser/workbenchThemeService.ts#L521-L523)):
+nothing is written to storage ([workbenchThemeService.ts:521-523](../../vscode-main/src/vs/workbench/services/themes/browser/workbenchThemeService.ts#L521-L523)):
 
 ```ts
 // remember theme data for a quick restore
@@ -48,7 +48,7 @@ Theme state lives in the workbench renderer, so it is **per-window by constructi
 state to fight over. That is the whole trick.
 
 **Extension-reachable entry point** —
-[themes.contribution.ts:559](../vscode-main/src/vs/workbench/contrib/themes/browser/themes.contribution.ts#L559):
+[themes.contribution.ts:559](../../vscode-main/src/vs/workbench/contrib/themes/browser/themes.contribution.ts#L559):
 
 ```ts
 CommandsRegistry.registerCommand('workbench.action.previewColorTheme', async function (accessor, extension: { publisher, name, version }, themeSettingsId?: string) {
@@ -71,7 +71,7 @@ Registered on plain `CommandsRegistry`, so it is callable from the extension hos
 and `undefined` on failure — a real success signal we can act on.
 
 `settingsId` is `theme.id || theme.label` from the contributing extension's `package.json`
-([colorThemeData.ts:715](../vscode-main/src/vs/workbench/services/themes/common/colorThemeData.ts#L715)), which is how we resolve a
+([colorThemeData.ts:715](../../vscode-main/src/vs/workbench/services/themes/common/colorThemeData.ts#L715)), which is how we resolve a
 user-facing theme name to command arguments.
 
 ## 3. Constraints found while reading the source
@@ -79,9 +79,9 @@ user-facing theme name to command arguments.
 ### C1 — Theme resolution has two paths, and only one is offline
 
 `findBuiltInThemes` matches on `extensionData.extensionIsBuiltin`
-([themes.contribution.ts:575](../vscode-main/src/vs/workbench/contrib/themes/browser/themes.contribution.ts#L575)). That flag traces to
-`ext.description.isBuiltin` ([themeExtensionPoints.ts:200](../vscode-main/src/vs/workbench/services/themes/common/themeExtensionPoints.ts#L200)),
-which is set as ([extensionsScannerService.ts:1031-1032](../vscode-main/src/vs/platform/extensionManagement/common/extensionsScannerService.ts#L1031-L1032)):
+([themes.contribution.ts:575](../../vscode-main/src/vs/workbench/contrib/themes/browser/themes.contribution.ts#L575)). That flag traces to
+`ext.description.isBuiltin` ([themeExtensionPoints.ts:200](../../vscode-main/src/vs/workbench/services/themes/common/themeExtensionPoints.ts#L200)),
+which is set as ([extensionsScannerService.ts:1031-1032](../../vscode-main/src/vs/platform/extensionManagement/common/extensionsScannerService.ts#L1031-L1032)):
 
 ```ts
 isBuiltin: extension.type === ExtensionType.System,
@@ -93,7 +93,7 @@ So:
 - **Builtin themes** (shipped in the app) → resolved locally, offline, instant.
 - **Everything else** → falls through to `getMarketplaceColorThemes`, which builds a gallery URL from
   `product.json`'s `extensionsGallery.resourceUrlTemplate` and downloads `package.json` + theme JSON
-  ([workbenchThemeService.ts:378-389](../vscode-main/src/vs/workbench/services/themes/browser/workbenchThemeService.ts#L378-L389)). Needs network,
+  ([workbenchThemeService.ts:378-389](../../vscode-main/src/vs/workbench/services/themes/browser/workbenchThemeService.ts#L378-L389)). Needs network,
   and needs the extension to actually exist in the gallery.
 
 **This bites immediately.** Installed themes on this machine:
@@ -110,14 +110,14 @@ detects this rather than guessing — see §6 T3.
 ### C2 — `extensions.json` metadata cannot fake builtin status
 
 Setting `metadata.isBuiltin` on a user extension only produces `isUserBuiltin`
-([extensionsScannerService.ts:697](../vscode-main/src/vs/platform/extensionManagement/common/extensionsScannerService.ts#L697)), and
+([extensionsScannerService.ts:697](../../vscode-main/src/vs/platform/extensionManagement/common/extensionsScannerService.ts#L697)), and
 `themeExtensionPoints` reads `isBuiltin`, not `isUserBuiltin`. **Attempted-and-rejected — do not
 retry this.**
 
 ### C3 — Driving the theme quick pick is a dead end
 
 `InstalledThemesPicker.openQuickPick` previews on focus but there is no way to leave it with the
-preview intact ([themes.contribution.ts:368-377](../vscode-main/src/vs/workbench/contrib/themes/browser/themes.contribution.ts#L368-L377)):
+preview intact ([themes.contribution.ts:368-377](../../vscode-main/src/vs/workbench/contrib/themes/browser/themes.contribution.ts#L368-L377)):
 
 ```ts
 } else {
@@ -134,7 +134,7 @@ Accept writes globally, Escape reverts. **Attempted-and-rejected.**
 
 ### C4 — Any global theme change stomps every window's preview
 
-[workbenchThemeService.ts:247-257](../vscode-main/src/vs/workbench/services/themes/browser/workbenchThemeService.ts#L247-L257) — a config event on
+[workbenchThemeService.ts:247-257](../../vscode-main/src/vs/workbench/services/themes/browser/workbenchThemeService.ts#L247-L257) — a config event on
 `workbench.colorTheme` (or the `preferred*` / `detect*` keys) calls `restoreColorTheme()` in **every**
 window, which re-reads settings and overwrites our preview. The extension must listen and re-apply.
 
@@ -155,8 +155,8 @@ No stable window id. Slots are assigned cooperatively; see §5.
 ## 4. Fallback if C1 blocks the themes actually wanted
 
 `--builtin-extensions-dir <path>` is a real CLI flag
-([argv.ts:111](../vscode-main/src/vs/platform/environment/node/argv.ts#L111),
-[environmentService.ts:112-114](../vscode-main/src/vs/platform/environment/common/environmentService.ts#L112-L114)). Point it at a writable
+([argv.ts:111](../../vscode-main/src/vs/platform/environment/node/argv.ts#L111),
+[environmentService.ts:112-114](../../vscode-main/src/vs/platform/environment/common/environmentService.ts#L112-L114)). Point it at a writable
 directory containing symlinks to every real builtin extension **plus** Dracula Pro. Dracula Pro then
 scans as `ExtensionType.System`, `isBuiltin` is true, and `findBuiltInThemes` matches it offline —
 with no edit to the app bundle and no code signature breakage.

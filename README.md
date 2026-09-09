@@ -1,160 +1,140 @@
 # Per-Window Theme
 
-Each open VS Code window gets its own color theme, at the same time. No workspace file, no
-folder-scoped settings, no fork of VS Code.
+Give every open VS Code window its own color theme, at the same time — without creating a workspace
+file, without folder-scoped settings, and without forking VS Code.
 
-Status: working PoC, verified on VS Code 1.108.0 / macOS. Design and evidence in [SPEC.md](SPEC.md).
+![status](https://img.shields.io/badge/status-working%20PoC-brightgreen) ![tests](https://img.shields.io/badge/tests-32%20passing-brightgreen) ![vscode](https://img.shields.io/badge/verified-1.108.0%20%2F%20macOS-blue)
 
-## How it works, in one paragraph
+## The problem
 
-VS Code applies a theme and *saves* a theme in two separate steps. `setColorTheme(theme, 'preview')`
-paints the window and deliberately writes nothing to settings. Theme state lives in the window's
-renderer, so a preview is per-window by construction. The internal command
-`workbench.action.previewColorTheme` reaches that path and is callable from an extension. This
-extension assigns each window a slot number, then previews slot N's theme into it.
+Two VS Code windows side by side — say prod on the left, a scratch repo on the right — look
+identical. Every few minutes you type into the wrong one, because there is no visual difference.
+The obvious fix is "give them different themes", and VS Code does not let you:
 
-## Install
+| What you'd try | What actually happens |
+| --- | --- |
+| Set `workbench.colorTheme` in User settings | One value shared by **every** window. Changing it recolors them all |
+| Set it in Workspace or Folder settings | Works — but forces a `.code-workspace` file or a `.vscode/settings.json` in the repo, which then gets committed, argued about, or reverted |
+| Look for a "per window" setting | Doesn't exist. VS Code's config scopes go User → Workspace → Folder. There is no window scope; the one named `WINDOW` explicitly means *"settable in user or workspace settings"*, both of which are shared |
+| `workbench.colorCustomizations` | Also a setting, so also global. Dead end |
+| Profiles (`code --profile`) | Genuinely per-window, but a profile carries its own settings **and** its own extension set, and switching needs a window relaunch. Heavy for "I just want a different color" |
+
+So the honest summary: **VS Code has no supported way to do this.** Every route runs through the
+settings stack, and the settings stack is shared.
+
+## The solution
+
+VS Code *applies* a theme and *saves* a theme in two separate steps, and there is an internal path
+that does the first without the second — `setColorTheme(theme, 'preview')`. It repaints the window
+and deliberately writes nothing to settings. Because theme state lives in the window's own renderer
+process, a preview is **per-window by construction**: there is no shared value for two windows to
+fight over.
+
+That path is reachable from an extension through the `workbench.action.previewColorTheme` command.
+This extension gives each window a number, then previews that window's theme into it — so two
+windows disagree about their theme, permanently, while sharing one settings file and one set of
+extensions.
+
+Full derivation, with source citations and the four approaches that turned out to be dead ends, is in
+[.spec/SPEC.md](.spec/SPEC.md).
+
+## Install locally
+
+No build step, no dependencies, no packaging. Clone it and symlink it.
 
 ```bash
-./scripts/install.sh          # symlinks into ~/.vscode/extensions
+# 1. clone
+git clone <your-remote> per-window-theme
+cd per-window-theme
+
+# 2. sanity check (optional, ~1s, no VS Code involved)
+npm test
+
+# 3. link into VS Code's extension folder
+./scripts/install.sh
+
+# 4. fully quit VS Code — Cmd+Q, not just closing the window — and reopen
 ```
 
-Then fully quit VS Code (Cmd+Q) and reopen, so the extension is scanned.
+Step 4 matters: VS Code caches scanned extension manifests, so a reload alone will not pick up a
+newly linked extension.
 
-Pick your themes in settings:
+Verify it worked: open two windows with no folder. They should show different themes, and the status
+bar should show a theme name in each. If not, run `Per-Window Theme: Show Status` from the command
+palette.
+
+### Choose your themes
 
 ```jsonc
+// settings.json
 {
   "perWindowTheme.themes": ["Dracula Pro", "Light Modern"]
 }
 ```
 
-Window 1 gets the first entry, window 2 the second, and the list wraps for further windows.
-Names are the theme's `settingsId` — its `id`, or its `label` when it has no `id`.
+First window gets the first entry, second the second, wrapping for more. Use the theme's **id** —
+which is its `id` field, or its display `label` when it has no `id`. Run
+`Per-Window Theme: Diagnose Theme Resolution` to print every valid id on your machine.
 
-## Private and paid themes need one extra step
+### If you use a paid or privately distributed theme
 
-A theme only resolves locally if its extension is *built-in*; anything else is fetched from the
-Marketplace, which fails for private/`.vsix` themes. Measured: 7/7 Dracula Pro variants fail by
-default, 26/26 themes pass with the farm below.
+Themes only resolve locally when their extension ships *with* VS Code; anything else is fetched from
+the Marketplace, which fails for a theme installed from a `.vsix` that isn't publicly listed.
+Measured on this machine: all 7 Dracula Pro variants fail by default, and all 26 themes pass with the
+workaround below.
 
 ```bash
 ./scripts/builtin-farm.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
 ```
 
-That builds `~/.per-window-theme/builtins` from symlinks — the VS Code app bundle is never modified —
-and prints the launch flag to use:
+That builds `~/.per-window-theme/builtins` out of symlinks — **the VS Code app bundle is never
+touched**, so its code signature stays intact — and prints the flag to launch with:
 
 ```bash
 code --builtin-extensions-dir "$HOME/.per-window-theme/builtins"
 ```
 
-Re-run it after a VS Code update. The Dock icon can't pass the flag; launch from the terminal, or
-wrap it.
+Re-run it after a VS Code update. Launching from the Dock can't pass the flag, so either start from
+the terminal or wrap it in an alias.
 
-## How a window picks its theme
+## Try it without installing anything
 
-Three rules, first match wins:
-
-| Priority | Rule | Set by |
-| --- | --- | --- |
-| 1 | **This window, explicitly** | `Pick Theme (This Window)` or `Cycle Theme`. Lasts until the window is closed |
-| 2 | **Remembered for this folder** | `Remember Theme For This Folder` — that directory then opens with that theme every time, in any window |
-| 3 | **Window slot** | Automatic. First window gets `themes[0]`, second `themes[1]`, wrapping |
-
-Folder memory is stored in the extension's own state, **never** in `.vscode/settings.json`, so
-nothing lands in your repos and nothing gets committed by accident.
-
-Set `perWindowTheme.unmappedStrategy` to `hash` and even unremembered folders get a stable theme
-derived from their path — the same repo always looks the same, with zero configuration.
-
-## Commands
-
-| Command | Does |
-| --- | --- |
-| `Pick Theme (This Window)` | Quick pick — configured themes first, then everything installed. Offers to remember it for the folder |
-| `Cycle Theme (This Window)` | Next theme in the list, this window only |
-| `Remember Theme For This Folder` | Pin a theme to the open directory, for all future windows |
-| `Forget Theme For This Folder` | Drop that folder's mapping |
-| `Show Remembered Folders` | List every folder → theme mapping |
-| `Clear All Remembered Folders` | Wipe the memory (asks first) |
-| `Re-apply Theme` | Force re-apply |
-| `Show Status` | Theme, why it was chosen, slot, folder, and the live window registry |
-| `Diagnose Theme Resolution` | Probe every installed theme, report what resolves |
-
-All are prefixed `Per-Window Theme:` in the command palette.
-
-The status bar shows the current theme; click it to pick another. Its tooltip explains *why* this
-window has this theme (explicit pick / remembered folder / slot), and shows a warning icon if the
-theme could not be applied.
-
-## Settings
-
-| Setting | Default | Meaning |
-| --- | --- | --- |
-| `perWindowTheme.enabled` | `true` | Kill switch |
-| `perWindowTheme.themes` | `["Dark Modern", "Light Modern"]` | Ordered theme ids, one per window slot, wrapping |
-| `perWindowTheme.rememberFolders` | `true` | Remember a theme per directory |
-| `perWindowTheme.unmappedStrategy` | `"slot"` | `slot` = by window order; `hash` = stable per folder path |
-| `perWindowTheme.showStatusBar` | `true` | Show the theme in the status bar |
-| `perWindowTheme.notifyOnFailure` | `true` | Warn instead of failing silently |
-| `perWindowTheme.heartbeatMs` | `5000` | How often a window refreshes its slot claim |
-| `perWindowTheme.staleMs` | `20000` | When an unrefreshed claim is treated as dead |
-
-## Quality-of-life behaviour
-
-- Re-applies your theme within ~1s when a normal `Cmd+K Cmd+T` overwrites it in every window.
-- Also re-checks when a window regains focus, catching a stomp that happened in the background.
-- Warns at startup if `themes` names something not installed, and can dump the valid ids.
-- Recomputes when you add or remove a folder in an empty window.
-- Failure surfaces as a warning with `Diagnose` / `Pick another`, never a silent no-op.
-
-## Tests
+Opens two throwaway windows with different themes, using isolated config and extension directories,
+so your real editor is untouched and no restart is needed:
 
 ```bash
-npm test                     # 32 headless tests: slots, decision tiers, folder memory
-./scripts/selftest.sh        # throwaway VS Code, probes every theme, writes a JSON report
-BUILTIN_FARM=1 ./scripts/selftest.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
-./scripts/demo.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0   # two live windows
+./scripts/demo.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
 ```
 
-`selftest.sh` and `demo.sh` use isolated `--user-data-dir` / `--extensions-dir`, so they cannot touch
-your real editor, settings, or extensions. No build step and no dependencies: the tests run on plain
-node because the logic modules take their dependencies as arguments instead of importing `vscode`.
+## Daily use
 
-Three things need human eyes, since they're two-window UI behaviour:
+| You want | Do |
+| --- | --- |
+| A different theme in this window | Click the theme name in the status bar |
+| This directory to always use a theme | `Per-Window Theme: Remember Theme For This Folder` |
+| To know why this window looks like this | Hover the status bar, or `Show Status` |
+| To reset the folder mappings | `Clear All Remembered Folders` |
 
-1. **T1** — open two windows with no folder. They should show different themes, both stable.
-2. **T5** — change the theme normally (`Ctrl+K Ctrl+T`) in one window. Within about a second, both
-   windows should snap back to their own assigned themes.
-3. **T6** — `Developer: Reload Window`. The window returns to its own theme after a brief flash of
-   the global theme.
+Folder mappings are stored in the extension's own state, never in `.vscode/settings.json`, so
+nothing lands in your repos.
 
-## Layout
+Every command, every setting, the module layout, and the test suite:
+[docs/REFERENCE.md](docs/REFERENCE.md).
 
-```
-src/
-  extension.js     activate/deactivate, event wiring
-  controller.js    this window's theme state: decide, apply, keep it applied
-  decide.js        the three-tier decision, pure and vscode-free
-  registry.js      cross-window slot claims (heartbeat file)
-  memory.js        folder -> theme, over any Memento-shaped store
-  themes.js        installed themes + the previewColorTheme call
-  workspaceKey.js  how a window identifies its folder
-  statusBar.js     status item and tooltip
-  commands.js      command implementations
-  config.js        settings accessors, stomp key list
-  logger.js        output channel
-  selftest.js      headless probe used by scripts/selftest.sh
-scripts/           install.sh, builtin-farm.sh, selftest.sh, demo.sh
-test/              run.js + one suite per module
+## Uninstall
+
+```bash
+rm ~/.vscode/extensions/local.per-window-theme-0.0.1   # the symlink only
 ```
 
-## Limits
+Then quit and reopen VS Code. Your `workbench.colorTheme` was never modified, so every window goes
+back to your normal theme.
 
-- `workbench.action.previewColorTheme` is an internal command, not public API. A VS Code update can
-  rename or remove it. The extension checks the command's return value, so a break shows up as a
-  visible warning rather than silence.
-- Theme flash on window reload — preview state intentionally never persists.
-- Private/paid themes need the built-in farm above.
-- Settings Sync carries the theme list, never the per-window slot assignment.
+## Honest limitations
+
+- `workbench.action.previewColorTheme` is an **internal** command, not public API. A VS Code update
+  could rename or remove it. The extension checks its return value, so a break shows up as a visible
+  warning rather than silently doing nothing. Fine for personal use; know what you're relying on.
+- A window reload briefly flashes your normal theme before the extension re-applies. Unavoidable:
+  the whole point is that the per-window choice is never persisted.
+- Settings Sync will carry your theme list, never the per-window assignments.

@@ -8,7 +8,7 @@
 const assert = require('assert');
 
 const { test, fakeStore } = require('./harness');
-const { FolderMemory, MEMORY_KEY } = require('../src/memory');
+const { FolderMemory, MEMORY_KEY } = require('../src/state/memory');
 
 const KEY_A = 'file:///repo/a';
 const KEY_B = 'file:///repo/b';

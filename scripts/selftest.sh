@@ -2,7 +2,7 @@
 # Verify the core mechanism against a throwaway VS Code instance.
 #
 # Uses an isolated --user-data-dir and --extensions-dir, so it cannot disturb your
-# real editor, settings, or installed extensions. Answers SPEC.md C1/T3: which
+# real editor, settings, or installed extensions. Answers .spec/SPEC.md C1/T3: which
 # installed themes can previewColorTheme actually resolve on this machine.
 #
 # Usage: ./selftest.sh [extra-theme-extension-dir ...]
@@ -27,7 +27,7 @@ fi
 rm -f "$EXT/extensions.json"
 ln -sfn "$ROOT" "$EXT/local.per-window-theme-0.0.1"
 
-# BUILTIN_FARM=1 tests the SPEC.md §4 fallback: extra theme extensions are placed in
+# BUILTIN_FARM=1 tests the .spec/SPEC.md §4 fallback: extra theme extensions are placed in
 # a farm of symlinks to the real built-in extensions and handed to
 # --builtin-extensions-dir, which makes them scan as ExtensionType.System so
 # findBuiltInThemes matches them locally with no gallery round-trip.

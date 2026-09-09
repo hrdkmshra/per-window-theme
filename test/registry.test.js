@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Slot registry tests (SPEC.md §5, cases T1/T7/T8/T9).
+ * Slot registry tests (.spec/SPEC.md §5, cases T1/T7/T8/T9).
  * SlotRegistry takes its dependencies as arguments, so no `vscode` stub is needed.
  */
 
@@ -11,7 +11,7 @@ const fsp = require('fs/promises');
 const path = require('path');
 
 const { test } = require('./harness');
-const { SlotRegistry } = require('../src/registry');
+const { SlotRegistry } = require('../src/state/registry');
 
 const STALE = 20000;
 

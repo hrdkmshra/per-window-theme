@@ -4,15 +4,16 @@ const vscode = require('vscode');
 const fsp = require('fs/promises');
 const path = require('path');
 
-const config = require('./config');
-const logger = require('./logger');
-const commands = require('./commands');
-const selftest = require('./selftest');
-const { SlotRegistry } = require('./registry');
-const { FolderMemory } = require('./memory');
-const { StatusBar } = require('./statusBar');
-const { Controller } = require('./controller');
-const { folderKey } = require('./workspaceKey');
+const config = require('./config/settings');
+const logger = require('./debug/logger');
+const commands = require('./ui/commands');
+const diagnostics = require('./debug/diagnostics');
+const selftest = require('./debug/selftest');
+const { SlotRegistry } = require('./state/registry');
+const { FolderMemory } = require('./state/memory');
+const { StatusBar } = require('./ui/statusBar');
+const { Controller } = require('./core/controller');
+const { folderKey } = require('./state/workspaceKey');
 
 const REGISTRY_FILE = 'windows.json';
 
@@ -64,7 +65,7 @@ async function activate(context) {
 		vscode.commands.executeCommand('perWindowTheme.pick');
 	}
 
-	commands.validateConfiguredThemes(controller);
+	diagnostics.validateConfiguredThemes(controller);
 
 	heartbeatTimer = setInterval(
 		() => registry.heartbeat(controller.slot, folderKey()),

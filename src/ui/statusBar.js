@@ -1,8 +1,8 @@
 'use strict';
 
 const vscode = require('vscode');
-const config = require('./config');
-const { folderKey, folderLabel } = require('./workspaceKey');
+const config = require('../config/settings');
+const { folderKey, folderLabel } = require('../state/workspaceKey');
 
 /**
  * Status bar entry: what this window is showing, and why.

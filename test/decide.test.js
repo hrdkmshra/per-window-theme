@@ -7,7 +7,7 @@
 const assert = require('assert');
 
 const { test } = require('./harness');
-const { decide, hashPick } = require('../src/decide');
+const { decide, hashPick } = require('../src/core/decide');
 
 const LIST = ['Dracula Pro', 'Light Modern'];
 const base = { pin: null, memory: {}, key: null, list: LIST, slotNumber: 0, strategy: 'slot' };

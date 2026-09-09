@@ -2,7 +2,7 @@
 
 const vscode = require('vscode');
 const fsp = require('fs/promises');
-const { listAllThemes } = require('./themes');
+const { listAllThemes } = require('../theme/themeService');
 
 /**
  * Non-interactive verification, used by scripts/selftest.sh against a throwaway VS

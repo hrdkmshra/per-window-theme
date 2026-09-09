@@ -1,7 +1,7 @@
 'use strict';
 
 const vscode = require('vscode');
-const { trace } = require('./logger');
+const { trace } = require('../debug/logger');
 
 /**
  * Reading installed themes, and the one call that actually paints a window.
@@ -39,7 +39,7 @@ function resolveTheme(settingsId) {
  * Apply a theme to the current window only, writing nothing to settings.
  *
  * `workbench.action.previewColorTheme` routes to setColorTheme(theme, 'preview'),
- * which paints the window and returns before the settings write. See SPEC.md §2.
+ * which paints the window and returns before the settings write. See .spec/SPEC.md §2.
  *
  * @returns {Promise<boolean>} true when the workbench confirms the theme was applied
  */
@@ -64,7 +64,7 @@ async function applyTheme(settingsId) {
 		return true;
 	}
 	trace(`previewColorTheme did not apply "${settingsId}" (returned ${JSON.stringify(applied)}) — ` +
-		'likely not built-in and not resolvable from the gallery; see SPEC.md C1');
+		'likely not built-in and not resolvable from the gallery; see .spec/SPEC.md C1');
 	return false;
 }
 

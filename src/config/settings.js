@@ -6,7 +6,7 @@ const SECTION = 'perWindowTheme';
 
 /**
  * Config keys whose change means the workbench re-read the theme from settings and
- * therefore clobbered our preview. See SPEC.md C4.
+ * therefore clobbered our preview. See .spec/SPEC.md C4.
  */
 const STOMP_KEYS = [
 	'workbench.colorTheme',

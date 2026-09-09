@@ -1,10 +1,10 @@
 'use strict';
 
-const config = require('./config');
-const { trace } = require('./logger');
+const config = require('../config/settings');
+const { trace } = require('../debug/logger');
 const { decide } = require('./decide');
-const { applyTheme, listAllThemes } = require('./themes');
-const { folderKey, folderLabel } = require('./workspaceKey');
+const { applyTheme, listAllThemes } = require('../theme/themeService');
+const { folderKey, folderLabel } = require('../state/workspaceKey');
 
 /**
  * Owns this window's theme state: what it should show, why, and keeping it that way
