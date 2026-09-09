@@ -15,13 +15,17 @@
     ],
     "strict": false,
     "noImplicitAny": false,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "maxNodeModuleJsDepth": 0,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.js",
     "test/**/*.js"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "**/node_modules/**",
+    "dist"
   ]
 }
