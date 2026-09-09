@@ -9,7 +9,7 @@
 #        ./selftest.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
 set -euo pipefail
 
-SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN="$(mktemp -d "${TMPDIR:-/tmp}/pwt-selftest-XXXXXX")"
 UD="$RUN/user-data"
 EXT="$RUN/extensions"
@@ -22,7 +22,10 @@ if ! command -v code >/dev/null 2>&1; then
 fi
 
 # The extension under test.
-ln -sfn "$SRC" "$EXT/local.per-window-theme-0.0.1"
+# Drop VS Code's scanned-extension cache, or a manifest change (e.g. a new "main")
+# is ignored and activation fails against the old path.
+rm -f "$EXT/extensions.json"
+ln -sfn "$ROOT" "$EXT/local.per-window-theme-0.0.1"
 
 # BUILTIN_FARM=1 tests the SPEC.md §4 fallback: extra theme extensions are placed in
 # a farm of symlinks to the real built-in extensions and handed to

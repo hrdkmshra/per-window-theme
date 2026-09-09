@@ -13,7 +13,7 @@
     "Themes",
     "Other"
   ],
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "activationEvents": [
     "*"
   ],
@@ -47,7 +47,7 @@
         "perWindowTheme.rememberFolders": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Remember a theme per folder, so the same directory always opens with the same theme. Stored in the extension's own state — never written to `.vscode/settings.json`."
+          "markdownDescription": "Remember a theme per folder, so the same directory always opens with the same theme. Stored in the extension's own state \u2014 never written to `.vscode/settings.json`."
         },
         "perWindowTheme.unmappedStrategy": {
           "type": "string",
@@ -124,5 +124,8 @@
         "title": "Per-Window Theme: Diagnose Theme Resolution"
       }
     ]
+  },
+  "scripts": {
+    "test": "node test/run.js"
   }
 }

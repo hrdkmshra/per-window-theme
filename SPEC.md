@@ -172,7 +172,12 @@ Same effect, but it edits the signed app bundle and is wiped by updates.
 ## 5. Design
 
 Plain JavaScript, no build step, no bundler — the extension folder is symlinked straight into
-`~/.vscode/extensions/` so iteration is edit + reload window.
+`~/.vscode/extensions/` so iteration is edit + reload window. Shell scripts live in `scripts/`, the
+extension in `src/` as one module per concern (see README "Layout").
+
+The modules that hold the logic — `decide.js`, `registry.js`, `memory.js` — take their dependencies as
+arguments and never `require('vscode')`. That is what lets the whole test suite run on plain node with
+no editor and no stubbing.
 
 ```
 activate()

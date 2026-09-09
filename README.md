@@ -16,7 +16,7 @@ extension assigns each window a slot number, then previews slot N's theme into i
 ## Install
 
 ```bash
-./install.sh          # symlinks into ~/.vscode/extensions
+./scripts/install.sh          # symlinks into ~/.vscode/extensions
 ```
 
 Then fully quit VS Code (Cmd+Q) and reopen, so the extension is scanned.
@@ -39,7 +39,7 @@ Marketplace, which fails for private/`.vsix` themes. Measured: 7/7 Dracula Pro v
 default, 26/26 themes pass with the farm below.
 
 ```bash
-./builtin-farm.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
+./scripts/builtin-farm.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
 ```
 
 That builds `~/.per-window-theme/builtins` from symlinks — the VS Code app bundle is never modified —
@@ -112,13 +112,15 @@ theme could not be applied.
 ## Tests
 
 ```bash
-node test/registry.test.js   # 12 tests: slot assignment, crash recovery, races
-./selftest.sh                # throwaway VS Code, probes every theme, writes a JSON report
-BUILTIN_FARM=1 ./selftest.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
+npm test                     # 32 headless tests: slots, decision tiers, folder memory
+./scripts/selftest.sh        # throwaway VS Code, probes every theme, writes a JSON report
+BUILTIN_FARM=1 ./scripts/selftest.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0
+./scripts/demo.sh ~/.vscode/extensions/dracula-theme-pro.theme-dracula-pro-1.1.0   # two live windows
 ```
 
-`selftest.sh` uses isolated `--user-data-dir` / `--extensions-dir`, so it cannot touch your real
-editor, settings, or extensions.
+`selftest.sh` and `demo.sh` use isolated `--user-data-dir` / `--extensions-dir`, so they cannot touch
+your real editor, settings, or extensions. No build step and no dependencies: the tests run on plain
+node because the logic modules take their dependencies as arguments instead of importing `vscode`.
 
 Three things need human eyes, since they're two-window UI behaviour:
 
@@ -127,6 +129,26 @@ Three things need human eyes, since they're two-window UI behaviour:
    windows should snap back to their own assigned themes.
 3. **T6** — `Developer: Reload Window`. The window returns to its own theme after a brief flash of
    the global theme.
+
+## Layout
+
+```
+src/
+  extension.js     activate/deactivate, event wiring
+  controller.js    this window's theme state: decide, apply, keep it applied
+  decide.js        the three-tier decision, pure and vscode-free
+  registry.js      cross-window slot claims (heartbeat file)
+  memory.js        folder -> theme, over any Memento-shaped store
+  themes.js        installed themes + the previewColorTheme call
+  workspaceKey.js  how a window identifies its folder
+  statusBar.js     status item and tooltip
+  commands.js      command implementations
+  config.js        settings accessors, stomp key list
+  logger.js        output channel
+  selftest.js      headless probe used by scripts/selftest.sh
+scripts/           install.sh, builtin-farm.sh, selftest.sh, demo.sh
+test/              run.js + one suite per module
+```
 
 ## Limits
 

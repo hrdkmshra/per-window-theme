@@ -9,7 +9,7 @@
 # Usage: ./demo.sh [extra-theme-extension-dir ...]
 set -euo pipefail
 
-SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEMO="${PWT_DEMO_DIR:-/tmp/pwt-demo}"
 UD="$DEMO/user-data"
 EXT="$DEMO/extensions"
@@ -48,7 +48,10 @@ REG="$UD/User/globalStorage/local.per-window-theme/windows.json"
 find "$UD/Backups" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
 
 # The extension under test.
-ln -sfn "$SRC" "$EXT/local.per-window-theme-0.0.1"
+# Drop VS Code's scanned-extension cache, or a manifest change (e.g. a new "main")
+# is ignored and activation fails against the old path.
+rm -f "$EXT/extensions.json"
+ln -sfn "$ROOT" "$EXT/local.per-window-theme-0.0.1"
 
 # Built-in farm, so non-gallery themes resolve locally (SPEC.md §4).
 find "$FARM" -maxdepth 1 -mindepth 1 -type l -exec rm {} + 2>/dev/null || true

@@ -3,7 +3,7 @@
 # Edit extension.js, then "Developer: Reload Window" to pick up changes.
 set -euo pipefail
 
-SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEST="$HOME/.vscode/extensions/local.per-window-theme-0.0.1"
 
 if [ -e "$DEST" ] && [ ! -L "$DEST" ]; then
@@ -11,6 +11,6 @@ if [ -e "$DEST" ] && [ ! -L "$DEST" ]; then
 	exit 1
 fi
 
-ln -sfn "$SRC" "$DEST"
+ln -sfn "$ROOT" "$DEST"
 echo "linked $DEST -> $SRC"
 echo "now: fully quit VS Code (Cmd+Q) and reopen, so the extension is scanned."
