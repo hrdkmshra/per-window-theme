@@ -74,6 +74,8 @@ async function activate(context) {
 		onApplyFailed: reportApplyFailure
 	});
 	controller = ctrl;
+	// Our own extension is user-installed, so its parent is the user extensions dir.
+	ctrl.userExtensionsDir = path.dirname(context.extensionPath);
 	context.subscriptions.push(ctrl);
 
 	// The kind the workbench painted from settings, before we override anything.

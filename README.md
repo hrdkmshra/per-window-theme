@@ -3,7 +3,7 @@
 Give every open VS Code window its own color theme, at the same time — without creating a workspace
 file, without folder-scoped settings, and without forking VS Code.
 
-![status](https://img.shields.io/badge/status-working%20PoC-brightgreen) ![tests](https://img.shields.io/badge/tests-46%20unit%20%2B%20e2e-brightgreen) ![vscode](https://img.shields.io/badge/verified-1.137.0%20%2F%20macOS-blue)
+![status](https://img.shields.io/badge/status-working%20PoC-brightgreen) ![tests](https://img.shields.io/badge/tests-62%20unit%20%2B%20e2e-brightgreen) ![vscode](https://img.shields.io/badge/verified-1.137.0%20%2F%20macOS-blue)
 
 ## The problem
 
@@ -136,6 +136,9 @@ code --builtin-extensions-dir "$HOME/.per-window-theme/builtins"
 
 Re-run it after a VS Code update. Launching from the Dock can't pass the flag, so either start from
 the terminal or wrap it in an alias.
+
+Without the farm, a paid theme cannot be previewed either — the picker labels those entries
+`not previewable — launch with --builtin-extensions-dir` rather than appearing to do nothing.
 
 ## Try it without installing anything
 

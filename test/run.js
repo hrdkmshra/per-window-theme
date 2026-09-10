@@ -11,7 +11,8 @@ const suites = [
 	['registry', require('./registry.test')],
 	['decide', require('./decide.test')],
 	['memory', require('./memory.test')],
-	['globalTheme', require('./globalTheme.test')]
+	['globalTheme', require('./globalTheme.test')],
+	['previewability', require('./previewability.test')]
 ];
 
 (async () => {

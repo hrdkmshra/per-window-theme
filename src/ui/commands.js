@@ -6,20 +6,42 @@ const logger = require('../debug/logger');
 const { trace } = logger;
 const diagnostics = require('../debug/diagnostics');
 const { listAllThemes } = require('../theme/themeService');
+const { previewHint, shouldSkipPreview } = require('../theme/previewability');
 const { folderKey, folderLabel } = require('../state/workspaceKey');
+
+/** Matches the pacing of VS Code's own theme picker. */
+const PREVIEW_DEBOUNCE_MS = 200;
 
 /**
  * Command implementations. Each takes the controller it acts on, so nothing here
  * holds module-level state. Troubleshooting commands live in debug/diagnostics.js.
  */
 
-/** Quick pick over configured themes first, then everything else installed. */
-function themePickItems(currentTheme) {
+/**
+ * Quick pick over configured themes first, then everything else installed. Entries
+ * carry a hint when a theme is known not to be previewable here.
+ *
+ * @param {string|null} currentTheme
+ * @param {string} [userExtensionsDir]
+ * @param {Set<string>} [knownUnavailable]
+ */
+function themePickItems(currentTheme, userExtensionsDir = '', knownUnavailable = new Set()) {
 	const configured = config.themeList();
-	const rest = listAllThemes().map(t => t.settingsId).filter(id => !configured.includes(id)).sort();
+	const all = listAllThemes();
+	const pathOf = id => (all.find(t => t.settingsId === id) || {}).extensionPath || '';
+	const rest = all.map(t => t.settingsId).filter(id => !configured.includes(id)).sort();
 	/** @type {vscode.QuickPickItem[]} */
 	const items = [];
-	const entry = id => ({ label: id, description: id === currentTheme ? 'current in this window' : undefined });
+	const entry = id => ({
+		label: id,
+		description: previewHint({
+			settingsId: id,
+			extensionPath: pathOf(id),
+			userExtensionsDir,
+			currentTheme,
+			knownUnavailable
+		})
+	});
 	if (configured.length) {
 		items.push({ label: 'Configured', kind: vscode.QuickPickItemKind.Separator });
 		items.push(...configured.map(entry));
@@ -45,22 +67,50 @@ function themePickItems(currentTheme) {
  */
 async function pickThemeWithPreview(ctrl, placeHolder) {
 	const before = ctrl.snapshot();
+	const unavailable = ctrl.unavailableThemes;
+	const rebuild = () => themePickItems(ctrl.theme, ctrl.userExtensionsDir, unavailable);
+
 	const picker = vscode.window.createQuickPick();
-	picker.items = themePickItems(ctrl.theme);
+	picker.items = rebuild();
 	picker.placeholder = placeHolder;
 	picker.matchOnDescription = true;
 
 	/** @type {string|undefined} */
 	let chosen;
-	/** Preview requests are serialised so a fast scroll cannot interleave applies. */
-	let pending = Promise.resolve();
+	/** @type {NodeJS.Timeout | undefined} */
+	let previewTimer;
+	/** In flight, so the closing revert can wait for it rather than racing it. */
+	let inFlight = Promise.resolve();
 
 	picker.onDidChangeActive(active => {
 		const item = active[0];
 		if (!item || item.kind === vscode.QuickPickItemKind.Separator) {
 			return;
 		}
-		pending = pending.then(() => ctrl.previewTheme(item.label));
+		// Debounced, and the pending preview is cancelled rather than queued — the same
+		// 200ms pacing VS Code's own theme picker uses. Queueing them made a fast
+		// scroll apply every theme it passed over, one after another, which is what
+		// made this feel laggy.
+		if (previewTimer) {
+			clearTimeout(previewTimer);
+		}
+		if (shouldSkipPreview(item.label, unavailable)) {
+			return; // already known to fail: do not stall on it again
+		}
+		previewTimer = setTimeout(() => {
+			previewTimer = undefined;
+			inFlight = ctrl.previewTheme(item.label).then(ok => {
+				if (ok === false) {
+					// Remember, so scrolling past it again is instant, and label it.
+					unavailable.add(item.label);
+					const active0 = picker.activeItems[0];
+					picker.items = rebuild();
+					if (active0) {
+						picker.activeItems = picker.items.filter(i => i.label === active0.label);
+					}
+				}
+			});
+		}, PREVIEW_DEBOUNCE_MS);
 	});
 
 	picker.onDidAccept(() => {
@@ -79,7 +129,10 @@ async function pickThemeWithPreview(ctrl, placeHolder) {
 		picker.show();
 	});
 
-	await pending;
+	if (previewTimer) {
+		clearTimeout(previewTimer);
+	}
+	await inFlight;
 	if (!chosen) {
 		// Cancelled: undo whatever the previews painted.
 		await ctrl.restoreSnapshot(before, 'theme picker cancelled');

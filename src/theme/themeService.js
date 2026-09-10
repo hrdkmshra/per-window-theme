@@ -21,6 +21,7 @@ function listAllThemes() {
 				settingsId: t.id || t.label,
 				label: t.label,
 				extensionId: ext.id,
+				extensionPath: ext.extensionPath,
 				publisher: ext.packageJSON.publisher,
 				name: ext.packageJSON.name,
 				version: ext.packageJSON.version

@@ -91,6 +91,17 @@ This needs `createQuickPick` rather than `showQuickPick`: only the former expose
 a cancelled picker leaves no trace. Preview applies are serialised, so scrolling fast cannot interleave
 two repaints.
 
+Previews are **debounced by 200ms and the pending one is cancelled**, which is the pacing VS Code's own
+theme picker uses. An earlier version queued them instead, so scrolling quickly applied every theme it
+passed over in turn — the reason preview felt laggy.
+
+A theme that cannot be applied here is remembered for the session in
+`Controller.unavailableThemes`, so scrolling past it again is instant rather than another failed
+lookup, and the picker labels it. The label distinguishes the two causes: a user-installed theme says
+`launch with --builtin-extensions-dir` (the fix), while a built-in one that still fails says it simply
+cannot be applied — the farm would not help. Only themes that have actually failed are skipped; public
+marketplace themes resolve through the gallery and must keep working.
+
 `Controller.snapshot()` deliberately excludes `overriding`: that flag records whether the window is
 currently showing a theme we painted — a fact about the screen, not about intent. Restoring its old
 value would convince the handback there was nothing to undo, and the previewed theme would stay after

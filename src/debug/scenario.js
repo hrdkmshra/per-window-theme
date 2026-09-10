@@ -81,10 +81,29 @@ async function run(outPath, ctrl) {
 	await sleep(SETTLE_MS);
 	steps.push(snapshot(ctrl, 'global changed to Light Modern: unopted window follows', 'Light'));
 
+	// 6. A theme that cannot be applied here must be remembered, so the picker can
+	//    skip it instead of stalling on it again, and the window must not be left
+	//    showing something bogus.
+	const beforeBad = ctrl.snapshot();
+	const badApplied = await ctrl.previewTheme('No Such Theme 12345');
+	await sleep(300);
+	const remembered = ctrl.unavailableThemes.has('No Such Theme 12345');
+	await ctrl.restoreSnapshot(beforeBad, 'scenario: after unavailable theme');
+	await sleep(400);
+	steps.push({
+		...snapshot(ctrl, 'an unavailable theme is recorded and does not stick', 'Light'),
+		previewReturnedFalse: badApplied === false,
+		rememberedAsUnavailable: remembered
+	});
+
 	const report = {
 		vscodeVersion: vscode.version,
 		steps,
-		failures: steps.filter(s => s.kind !== s.expectedKind).map(s => s.step)
+		failures: steps.filter(s =>
+			s.kind !== s.expectedKind
+			|| s.previewReturnedFalse === false
+			|| s.rememberedAsUnavailable === false
+		).map(s => s.step)
 	};
 	report.passed = report.failures.length === 0;
 

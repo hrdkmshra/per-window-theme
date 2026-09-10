@@ -50,6 +50,15 @@ class Controller {
 		 * resolve the global theme id when VS Code follows the OS color scheme.
 		 */
 		this.initialKind = undefined;
+		/**
+		 * Themes that failed to apply in this window, remembered for the session so the
+		 * picker can skip them instantly rather than stalling on a gallery lookup every
+		 * time you scroll past. See theme/previewability.js.
+		 * @type {Set<string>}
+		 */
+		this.unavailableThemes = new Set();
+		/** Where user-installed extensions live; used to explain why a theme failed. */
+		this.userExtensionsDir = '';
 	}
 
 	async claimSlot() {
@@ -101,6 +110,8 @@ class Controller {
 	 * Paint a theme without committing to it: no window pin, nothing written to folder
 	 * memory. Used while walking the theme picker, so highlighting an entry shows what
 	 * it actually looks like.
+	 *
+	 * @returns {Promise<boolean>} whether the theme could be applied
 	 */
 	async previewTheme(theme) {
 		this.theme = theme;
@@ -108,7 +119,11 @@ class Controller {
 		this.lastOk = await applyTheme(theme);
 		this.lastAppliedAt = Date.now();
 		this.overriding = this.overriding || this.lastOk;
+		if (!this.lastOk) {
+			this.unavailableThemes.add(theme);
+		}
 		this.render();
+		return this.lastOk;
 	}
 
 	/** Choose a theme for this window only, for as long as the window lives. */
