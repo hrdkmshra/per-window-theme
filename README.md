@@ -3,7 +3,7 @@
 Give every open VS Code window its own color theme, at the same time — without creating a workspace
 file, without folder-scoped settings, and without forking VS Code.
 
-![status](https://img.shields.io/badge/status-working%20PoC-brightgreen) ![tests](https://img.shields.io/badge/tests-46%20unit%20%2B%20e2e-brightgreen) ![vscode](https://img.shields.io/badge/verified-1.136.2%20%2F%20macOS-blue)
+![status](https://img.shields.io/badge/status-working%20PoC-brightgreen) ![tests](https://img.shields.io/badge/tests-46%20unit%20%2B%20e2e-brightgreen) ![vscode](https://img.shields.io/badge/verified-1.137.0%20%2F%20macOS-blue)
 
 ## The problem
 
@@ -150,7 +150,7 @@ so your real editor is untouched and no restart is needed:
 
 | You want | Do |
 | --- | --- |
-| A different theme in this window | Click the theme name in the status bar |
+| A different theme in this window | Click the theme name in the status bar — it previews as you scroll, Escape cancels |
 | This directory to always use a theme | `Per-Window Theme: Remember Theme For This Folder` |
 | To know why this window looks like this | Hover the status bar, or `Show Status` |
 | To reset the folder mappings | `Clear All Remembered Folders` |

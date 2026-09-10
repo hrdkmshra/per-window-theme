@@ -51,7 +51,7 @@ picking at all.
 
 | Command | Does |
 | --- | --- |
-| `Pick Theme (This Window)` | Quick pick — configured themes first, then everything installed. Offers to remember it for the folder |
+| `Pick Theme (This Window)` | Quick pick — configured themes first, then everything installed. **Previews as you move through the list**; Escape puts the window back. Offers to remember your choice for the folder |
 | `Cycle Theme (This Window)` | Next theme in the list, this window only |
 | `Remember Theme For This Folder` | Pin a theme to the open directory, for all future windows |
 | `Forget Theme For This Folder` | Drop that folder's mapping |
@@ -79,6 +79,22 @@ theme could not be applied.
 | `perWindowTheme.notifyOnFailure` | `true` | Warn instead of failing silently |
 | `perWindowTheme.heartbeatMs` | `5000` | How often a window refreshes its slot claim |
 | `perWindowTheme.staleMs` | `20000` | When an unrefreshed claim is treated as dead |
+
+### Live preview in the picker
+
+Highlighting an entry repaints the window, the way VS Code's own theme picker does, and cancelling
+restores exactly what was there before.
+
+This needs `createQuickPick` rather than `showQuickPick`: only the former exposes
+`onDidChangeActive`, so `showQuickPick` can never preview. Previews go through
+`Controller.previewTheme`, which paints without setting a window pin or writing to folder memory, so
+a cancelled picker leaves no trace. Preview applies are serialised, so scrolling fast cannot interleave
+two repaints.
+
+`Controller.snapshot()` deliberately excludes `overriding`: that flag records whether the window is
+currently showing a theme we painted — a fact about the screen, not about intent. Restoring its old
+value would convince the handback there was nothing to undo, and the previewed theme would stay after
+a cancel. The scenario test covers exactly that.
 
 ## Quality-of-life behaviour
 

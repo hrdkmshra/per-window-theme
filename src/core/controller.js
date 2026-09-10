@@ -75,6 +75,42 @@ class Controller {
 		return d;
 	}
 
+	/**
+	 * Everything needed to put this window back exactly as it was, so a cancelled
+	 * theme picker leaves no trace.
+	 */
+	snapshot() {
+		return { theme: this.theme, source: this.source, pin: this.pin };
+	}
+
+	/**
+	 * `overriding` is deliberately NOT part of the snapshot. It records whether this
+	 * window currently shows a theme we painted, which is a fact about the screen, not
+	 * about the user's intent — and a preview paints. Restoring it to its old value
+	 * would convince restoreGlobal() that it had nothing to undo, leaving the previewed
+	 * theme on screen after a cancel.
+	 */
+	async restoreSnapshot(snap, reason) {
+		this.theme = snap.theme;
+		this.source = snap.source;
+		this.pin = snap.pin;
+		await this.apply(reason);
+	}
+
+	/**
+	 * Paint a theme without committing to it: no window pin, nothing written to folder
+	 * memory. Used while walking the theme picker, so highlighting an entry shows what
+	 * it actually looks like.
+	 */
+	async previewTheme(theme) {
+		this.theme = theme;
+		this.source = 'previewing';
+		this.lastOk = await applyTheme(theme);
+		this.lastAppliedAt = Date.now();
+		this.overriding = this.overriding || this.lastOk;
+		this.render();
+	}
+
 	/** Choose a theme for this window only, for as long as the window lives. */
 	async pinTheme(theme, source = 'this window (explicit pick)') {
 		this.pin = theme;

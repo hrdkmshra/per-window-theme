@@ -31,27 +31,80 @@ function themePickItems(currentTheme) {
 	return items;
 }
 
-async function pick(ctrl) {
-	const picked = await vscode.window.showQuickPick(themePickItems(ctrl.theme), {
-		placeHolder: 'Theme for this window only',
-		matchOnDescription: true
+
+/**
+ * Theme picker that previews as you move through it, the way VS Code's own theme
+ * picker does, and puts the window back if you cancel.
+ *
+ * `showQuickPick` cannot do this: it never reports which entry is highlighted. Only
+ * `createQuickPick` exposes `onDidChangeActive`, so the picker is built by hand.
+ *
+ * @param {any} ctrl
+ * @param {string} placeHolder
+ * @returns {Promise<string|undefined>} the chosen theme id, or undefined if cancelled
+ */
+async function pickThemeWithPreview(ctrl, placeHolder) {
+	const before = ctrl.snapshot();
+	const picker = vscode.window.createQuickPick();
+	picker.items = themePickItems(ctrl.theme);
+	picker.placeholder = placeHolder;
+	picker.matchOnDescription = true;
+
+	/** @type {string|undefined} */
+	let chosen;
+	/** Preview requests are serialised so a fast scroll cannot interleave applies. */
+	let pending = Promise.resolve();
+
+	picker.onDidChangeActive(active => {
+		const item = active[0];
+		if (!item || item.kind === vscode.QuickPickItemKind.Separator) {
+			return;
+		}
+		pending = pending.then(() => ctrl.previewTheme(item.label));
 	});
+
+	picker.onDidAccept(() => {
+		const item = picker.activeItems[0];
+		if (item && item.kind !== vscode.QuickPickItemKind.Separator) {
+			chosen = item.label;
+		}
+		picker.hide();
+	});
+
+	await new Promise(resolve => {
+		picker.onDidHide(() => {
+			picker.dispose();
+			resolve(undefined);
+		});
+		picker.show();
+	});
+
+	await pending;
+	if (!chosen) {
+		// Cancelled: undo whatever the previews painted.
+		await ctrl.restoreSnapshot(before, 'theme picker cancelled');
+	}
+	return chosen;
+}
+
+async function pick(ctrl) {
+	const picked = await pickThemeWithPreview(ctrl, 'Theme for this window only');
 	if (!picked) {
 		return;
 	}
-	await ctrl.pinTheme(picked.label);
+	await ctrl.pinTheme(picked);
 
 	// Offer to make it stick to this directory.
 	const key = folderKey();
-	if (key && config.rememberFolders() && ctrl.memory.get(key) !== picked.label) {
+	if (key && config.rememberFolders() && ctrl.memory.get(key) !== picked) {
 		const choice = await vscode.window.showInformationMessage(
-			`Always use "${picked.label}" for ${folderLabel(key)}?`,
+			`Always use "${picked}" for ${folderLabel(key)}?`,
 			'Remember',
 			'Just this window'
 		);
 		if (choice === 'Remember') {
-			await ctrl.memory.set(key, picked.label);
-			trace(`remembered "${picked.label}" for ${key}`);
+			await ctrl.memory.set(key, picked);
+			trace(`remembered "${picked}" for ${key}`);
 			// Folder memory now supplies the same answer, so the window pin is redundant.
 			await ctrl.unpin('remembered from pick');
 		}
@@ -76,17 +129,15 @@ async function rememberForFolder(ctrl) {
 			'Per-Window Theme: this window has no folder open, so there is nothing to remember.');
 		return;
 	}
-	const picked = await vscode.window.showQuickPick(themePickItems(ctrl.theme), {
-		placeHolder: `Theme to always use for ${folderLabel(key)}`
-	});
+	const picked = await pickThemeWithPreview(ctrl, `Theme to always use for ${folderLabel(key)}`);
 	if (!picked) {
 		return;
 	}
-	await ctrl.memory.set(key, picked.label);
-	trace(`remembered "${picked.label}" for ${key}`);
+	await ctrl.memory.set(key, picked);
+	trace(`remembered "${picked}" for ${key}`);
 	await ctrl.unpin('remember-for-folder command');
 	vscode.window.showInformationMessage(
-		`Per-Window Theme: ${folderLabel(key)} will now use "${picked.label}".`);
+		`Per-Window Theme: ${folderLabel(key)} will now use "${picked}".`);
 }
 
 async function forgetFolder(ctrl) {
@@ -153,4 +204,4 @@ function registerAll(ctrl) {
 	return Object.entries(map).map(([id, fn]) => vscode.commands.registerCommand(id, fn));
 }
 
-module.exports = { registerAll, themePickItems };
+module.exports = { registerAll, themePickItems, pickThemeWithPreview };
